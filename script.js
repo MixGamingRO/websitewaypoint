@@ -610,6 +610,9 @@ function renderWarnings() {
 function renderBans() {
   if (!bansList) return;
   const bans = getBans();
+  const session = getStaffSession();
+  const allowRevoke = session && session.level >= 3;
+
   if (!bans.length) {
     bansList.innerHTML = '<p class="response-box">No bans have been issued yet.</p>';
     return;
@@ -623,6 +626,7 @@ function renderBans() {
         <p><strong>Reason:</strong> ${ban.reason}</p>
         <p><strong>Duration:</strong> ${ban.duration}</p>
         <p><strong>Date:</strong> ${ban.createdAt}</p>
+        ${allowRevoke ? `<button class="btn btn-secondary revoke-ban-btn" data-ban-id="${ban.id}" type="button">Revoke Ban</button>` : ''}
       </article>
     `)
     .join('');
@@ -1174,6 +1178,31 @@ function setupStaffEventHandlers() {
         if (recordSearchResult) {
           recordSearchResult.innerHTML = `<div class="response-box">Unable to fetch record data for ${username}.</div>`;
         }
+      }
+    });
+  }
+
+  if (bansList) {
+    bansList.addEventListener('click', async event => {
+      const button = event.target.closest('.revoke-ban-btn');
+      if (!button) return;
+      const banId = button.dataset.banId;
+      const session = getStaffSession();
+      if (!session || session.level < 3) {
+        showResponse(staffDashboardMessage, 'Only management and above can revoke bans.', true);
+        return;
+      }
+      if (!banId) return;
+
+      try {
+        await apiRequest(`/api/bans/${encodeURIComponent(banId)}`, {
+          method: 'DELETE',
+          body: JSON.stringify({ issuedBy: session.displayName, issuerLevel: session.level })
+        });
+        await syncFromServer();
+        showResponse(staffDashboardMessage, 'Ban revoked successfully.');
+      } catch (error) {
+        showResponse(staffDashboardMessage, error.message || 'Unable to revoke ban.', true);
       }
     });
   }

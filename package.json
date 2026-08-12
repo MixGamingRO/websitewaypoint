@@ -1,0 +1,13 @@
+{
+  "name": "waypoint-v2",
+  "version": "1.0.0",
+  "description": "Waypoint staff moderation backend and static website",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

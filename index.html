@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waypoint | Roblox Game</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Waypoint</a>
+      <nav class="nav-links">
+        <a href="index.html">🏠 Home</a>
+        <a href="team.html">👥 Team</a>
+        <a href="rules.html">📜 Game Rules</a>
+        <a href="faq.html">❓ FAQ</a>
+        <a href="contact.html">✉️ Contact</a>
+        <a href="careers.html">💼 Careers</a>
+      </nav>
+      <div class="header-actions">
+        <span id="staffStatusText" class="staff-status-text"></span>
+        <button id="staffPanelBtn" class="btn btn-secondary header-cta" type="button" style="display:none;">Staff Panel</button>
+        <button id="staffLoginBtn" class="btn btn-secondary header-cta" type="button">Staff Login</button>
+        <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
+      </div>
+    </div>
+  </header>
+
+  <section id="birthdayBanner" class="birthday-banner" style="display:none;">
+    <div class="container">
+      <p id="birthdayBannerText"></p>
+    </div>
+  </section>
+
+  <div id="staffLoginModal" class="staff-login-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-card-top">
+        <div>
+          <p class="eyebrow">Staff Access</p>
+          <h2>Staff Login</h2>
+          <p class="modal-hero-copy">Authorized staff only. Unauthorised access is prohibited and may be treated as a security violation.</p>
+        </div>
+        <button id="staffModalClose" class="modal-close" type="button">✕</button>
+      </div>
+      <div class="login-grid">
+        <div class="login-banner">
+          <img src="images/banner.png" alt="Waypoint login banner" />
+          <div class="login-banner-copy">
+            <p>Waypoint Control Room</p>
+          </div>
+        </div>
+        <form id="staffLoginForm" class="login-form">
+          <label for="staffUsername">Username</label>
+          <input id="staffUsername" name="staffUsername" type="text" required placeholder="Staff username" />
+          <label for="staffPassword">Password</label>
+          <div class="password-input-row">
+            <input id="staffPassword" name="staffPassword" type="password" required placeholder="Password" />
+            <button id="passwordVisibilityToggle" type="button" class="password-toggle" aria-label="Show password">Show</button>
+          </div>
+          <button class="btn btn-primary login-submit" type="submit">Login</button>
+        </form>
+      </div>
+      <div id="staffLoginMessage" class="response-box" style="display:none;margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <main>
+    <section class="hero-section">
+      <div class="hero-background">
+        <img src="images/banner1.png" alt="Waypoint banner background" />
+      </div>
+      <div class="container hero-content">
+        <div class="hero-copy">
+          <p class="eyebrow">Roblox Roleplay</p>
+          <h1>Waypoint</h1>
+          <p>Explore the city, complete missions, join a team, and climb the ranks in an immersive Roblox world with next-level staff support.</p>
+          <div class="hero-buttons">
+            <button id="playGameBtn" class="btn btn-primary" type="button">Play on Roblox</button>
+            <a class="btn btn-secondary" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Join Discord</a>
+          </div>
+          <div class="join-check-box" style="margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <input id="gameJoinUsername" type="text" placeholder="Enter Roblox username" style="max-width: 260px;" />
+            <button id="checkGameAccessBtn" class="btn btn-secondary" type="button">Check Access</button>
+          </div>
+          <div id="gameAccessMessage" class="response-box" style="display:none; margin-top:12px;"></div>
+          <div class="hero-highlights">
+            <div>
+              <strong>Growing world</strong>
+              <span>New updates weekly</span>
+            </div>
+            <div>
+              <strong>Live staff</strong>
+              <span>Fast support and events</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-preview">
+          <img src="images/banner.png" alt="Waypoint gameplay preview" class="hero-preview-img" />
+          <div class="hero-preview-card">
+            <h2>Trusted Community</h2>
+            <p>Waypoints servers are built for roleplay, teamwork, and active Discord engagement.</p>
+            <div class="hero-stats">
+              <div>
+                <strong>24/7</strong>
+                <span>Support</span>
+              </div>
+              <div>
+                <strong>Live</strong>
+                <span>Events</span>
+              </div>
+              <div>
+                <strong>Fast</strong>
+                <span>Tickets</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="info-section">
+      <div class="container section-heading">
+        <h2>About Waypoint</h2>
+        <p>Waypoint is a roleplay-driven Roblox experience where every player can become a staff member, a driver, or a city hero.</p>
+      </div>
+      <div class="container cards-grid">
+        <article class="card">
+          <h3>City Roleplay</h3>
+          <p>Take on jobs, unlock vehicles, and interact with realistic city systems.</p>
+        </article>
+        <article class="card">
+          <h3>Team Events</h3>
+          <p>Join live events, staff operations, and community challenges.</p>
+        </article>
+        <article class="card">
+          <h3>Rank Progression</h3>
+          <p>Earn reputation through missions, support requests, and premium updates.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <div class="container section-heading">
+        <h2>Why Play Waypoint?</h2>
+        <p>Quality gameplay, active community, and a team that listens to feedback.</p>
+      </div>
+      <div class="container feature-grid">
+        <div class="feature-card">
+          <h3>Active Discord</h3>
+          <p>Chat with the team, get updates, and join events through our Discord server.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Ticket Support</h3>
+          <p>Submit in-game or website tickets and get fast help from our team.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Career Opportunities</h3>
+          <p>Apply for developer, moderator, and support roles on the careers page.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="staff-section">
+      <div class="container section-heading">
+        <h2>Waypoint Staff</h2>
+        <p>Meet the team keeping the game alive and the community supported.</p>
+      </div>
+      <div id="topStaff" class="container staff-grid"></div>
+    </section>
+
+    <section class="cta-section">
+      <div class="container cta-card">
+        <h2>Ready to join?</h2>
+        <p>Play the game, join Discord, and contact us anytime for questions or support.</p>
+        <div class="cta-actions">
+          <a class="btn btn-primary" href="contact.html">Contact Support</a>
+          <a class="btn btn-secondary" href="careers.html">View Careers</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>Waypoint 2026</p>
+      <p><a href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a></p>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

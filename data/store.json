@@ -1,0 +1,79 @@
+{
+  "tickets": [],
+  "warnings": [],
+  "bans": [],
+  "staffAccounts": [
+    {
+      "username": "mcrnathan",
+      "password": "ownerpass",
+      "displayName": "mcrnathan",
+      "role": "Owner",
+      "level": 4,
+      "email": "",
+      "birthday": "2000-03-15"
+    },
+    {
+      "username": "Rocanti",
+      "password": "managementpass",
+      "displayName": "Rocanti",
+      "role": "Management",
+      "level": 3,
+      "email": "",
+      "birthday": "2000-05-06"
+    },
+    {
+      "username": "Chowlty",
+      "password": "managementpass",
+      "displayName": "Chowlty",
+      "role": "Management",
+      "level": 3,
+      "email": "",
+      "birthday": "2000-07-28"
+    },
+    {
+      "username": "MixBoss28",
+      "password": "managementpass",
+      "displayName": "MixBoss28",
+      "role": "Management",
+      "level": 3,
+      "email": "",
+      "birthday": "2000-08-12"
+    },
+    {
+      "username": "Seby17119",
+      "password": "devpass",
+      "displayName": "Seby17119",
+      "role": "Developer",
+      "level": 2,
+      "email": "",
+      "birthday": "2000-11-02"
+    },
+    {
+      "username": "ActualCheddar",
+      "password": "devpass",
+      "displayName": "ActualCheddar",
+      "role": "Developer",
+      "level": 2,
+      "email": "",
+      "birthday": "2000-01-22"
+    },
+    {
+      "username": "rocantins",
+      "password": "rocanti",
+      "displayName": "rocantins",
+      "role": "Developer",
+      "level": 2,
+      "email": "",
+      "birthday": ""
+    }
+  ],
+  "staffProfiles": {
+    "rocantins": {
+      "status": "Leave of Absence",
+      "email": "",
+      "birthday": ""
+    }
+  },
+  "staffNotes": {},
+  "ticketCounter": 0
+}

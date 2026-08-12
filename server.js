@@ -147,6 +147,7 @@ app.post('/api/bans', (req, res) => {
 
   const store = readStore();
   const ban = {
+    id: `ban-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     username,
     reason,
     evidence: evidence || '',
@@ -157,6 +158,24 @@ app.post('/api/bans', (req, res) => {
   store.bans.unshift(ban);
   writeStore(store);
   res.status(201).json({ message: 'Ban created', ban });
+});
+
+app.delete('/api/bans/:id', (req, res) => {
+  const { id } = req.params;
+  const { issuedBy, issuerLevel } = req.body || {};
+  if (!issuedBy || Number(issuerLevel) < 3) {
+    return res.status(403).json({ error: 'Only management and above can revoke bans' });
+  }
+
+  const store = readStore();
+  const banIndex = store.bans.findIndex(item => item.id === id);
+  if (banIndex === -1) {
+    return res.status(404).json({ error: 'Ban not found' });
+  }
+
+  const [removedBan] = store.bans.splice(banIndex, 1);
+  writeStore(store);
+  res.json({ message: 'Ban revoked', ban: removedBan });
 });
 
 app.get('/api/staff/accounts', (req, res) => {

@@ -314,7 +314,7 @@ function createTicketId() {
   return {
     id: `WP-${String(ticketNumber).padStart(4, '0')}`,
     number: ticketNumber,
-    url: `https://podrblx.co.uk/staff/ticket?ID=${ticketNumber}`,
+    url: `https://websitewaypoint.onrender.com/staff/ticket?ID=${ticketNumber}`,
   };
 }
 

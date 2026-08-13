@@ -28,7 +28,7 @@ const DATA_FILE = path.join(DATA_DIR, 'store.json');
 //   2. Grab the connection string (Database Access -> connect -> Node.js).
 //   3. In the Render dashboard, add an environment variable MONGODB_URI with
 //      that connection string to this service.
-//   4. Redeploy. From then on all data (accounts, tickets, warnings, bans,
+//   4. Redeploy. From then on all data (accounts, warnings, bans,
 //      staff status/email/birthday) persists across restarts.
 // ---------------------------------------------------------------------------
 
@@ -37,7 +37,6 @@ const MONGODB_DB = process.env.MONGODB_DB || 'waypoint';
 let mongoCollection = null;
 
 const defaultState = {
-  tickets: [],
   warnings: [],
   bans: [],
   staffAccounts: [
@@ -49,21 +48,18 @@ const defaultState = {
     { username: 'ActualCheddar', password: 'devpass', displayName: 'ActualCheddar', role: 'Developer', level: 2, email: '', birthday: '2000-01-22' }
   ],
   staffProfiles: {},
-  staffNotes: {},
-  ticketCounter: 0
+  staffNotes: {}
 };
 
 function normalizeState(parsed) {
   return {
     ...defaultState,
     ...parsed,
-    tickets: Array.isArray(parsed.tickets) ? parsed.tickets : [],
     warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
     bans: Array.isArray(parsed.bans) ? parsed.bans : [],
     staffAccounts: Array.isArray(parsed.staffAccounts) && parsed.staffAccounts.length ? parsed.staffAccounts : defaultState.staffAccounts,
     staffProfiles: parsed.staffProfiles && typeof parsed.staffProfiles === 'object' ? parsed.staffProfiles : {},
-    staffNotes: parsed.staffNotes && typeof parsed.staffNotes === 'object' ? parsed.staffNotes : {},
-    ticketCounter: Number(parsed.ticketCounter) || 0
+    staffNotes: parsed.staffNotes && typeof parsed.staffNotes === 'object' ? parsed.staffNotes : {}
   };
 }
 
@@ -176,39 +172,6 @@ app.use(express.static(__dirname));
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'waypoint-api', storage: mongoCollection ? 'mongodb' : 'local-file (not persistent on Render free tier)' });
-});
-
-app.get('/api/tickets', (req, res) => {
-  const store = readStore();
-  res.json({ tickets: store.tickets });
-});
-
-app.post('/api/tickets', (req, res) => {
-  const { name, email, subject, type, message } = req.body || {};
-  if (!name || !email || !subject || !message) {
-    return res.status(400).json({ error: 'name, email, subject, and message are required' });
-  }
-
-  const store = readStore();
-  const nextNumber = (Number(store.ticketCounter) || 0) + 1;
-  const ticketId = `WP-${String(nextNumber).padStart(4, '0')}`;
-  const ticket = {
-    id: ticketId,
-    number: nextNumber,
-    url: `/team.html?ticket=${encodeURIComponent(ticketId)}`,
-    name,
-    email,
-    subject,
-    type: type || 'General',
-    status: 'open',
-    message,
-    createdAt: new Date().toISOString()
-  };
-
-  store.ticketCounter = nextNumber;
-  store.tickets.unshift(ticket);
-  writeStore(store);
-  res.status(201).json({ message: 'Ticket created', ticket });
 });
 
 app.get('/api/warnings', (req, res) => {
@@ -406,7 +369,6 @@ app.get('/api/records', (req, res) => {
   const store = readStore();
   const warnings = store.warnings.filter(entry => entry.username.toLowerCase() === String(username).toLowerCase());
   const bans = store.bans.filter(entry => entry.username.toLowerCase() === String(username).toLowerCase());
-  const tickets = store.tickets.filter(entry => entry.name.toLowerCase() === String(username).toLowerCase());
   const account = store.staffAccounts.find(entry => entry.username.toLowerCase() === String(username).toLowerCase()) || null;
 
   res.json({
@@ -414,7 +376,6 @@ app.get('/api/records', (req, res) => {
     account,
     warnings,
     bans,
-    tickets,
     hasWarnings: warnings.length > 0,
     hasBans: bans.length > 0
   });
@@ -489,11 +450,10 @@ app.post('/api/staff/notes', (req, res) => {
 });
 
 // NOTE: previously this was `app.get('*', ...)` sending index.html for ANY
-// unmatched route. That meant a stale/incorrect link (like an old
-// /staff/ticket?ID=3 bookmark) silently rendered the homepage markup with
-// broken relative asset paths instead of a real 404 - which is exactly the
-// "unstyled page that isn't the ticket" symptom. Real pages are plain files
-// served by express.static above, so unmatched routes should 404 instead.
+// unmatched route. That meant a stale/incorrect link silently rendered the
+// homepage markup with broken relative asset paths instead of a real 404.
+// Real pages are plain files served by express.static above, so unmatched
+// routes should 404 instead.
 app.use((req, res) => {
   res.status(404).type('html').send('<h1>404 - Page not found</h1><p><a href="/index.html">Go home</a></p>');
 });

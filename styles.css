@@ -387,115 +387,31 @@ img {
   align-items: center;
 }
 
-.staff-record-list,
-.staff-tickets-list {
+.staff-record-list {
   display: grid;
   gap: 16px;
   margin-top: 18px;
 }
 
-.staff-record-item,
-.staff-ticket-item {
+.staff-record-item {
   background: rgba(255, 255, 255, 0.03);
   padding: 18px;
   border-radius: 20px;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.staff-ticket-item {
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.staff-ticket-item:hover,
-.staff-ticket-item:focus-within {
-  transform: translateY(-1px);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14);
-}
-
-.ticket-item-submeta {
+.record-item-submeta {
   color: var(--muted);
   margin: 6px 0 12px;
 }
 
-.ticket-detail-panel {
-  margin-top: 24px;
-  background: rgba(15, 23, 42, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 24px;
-  padding: 24px;
-}
-
-.ticket-detail-header {
-  display: flex;
-  justify-content: space-between;
-  gap: 24px;
-  align-items: flex-start;
-}
-
-.ticket-detail-meta {
-  color: var(--muted);
-  margin-top: 8px;
-}
-
-.ticket-detail-message {
-  margin: 20px 0 0;
-  color: var(--text);
-  line-height: 1.7;
-}
-
-.ticket-detail-actions {
-  display: grid;
-  gap: 12px;
-  min-width: 260px;
-}
-
-.ticket-detail-actions-row {
-  margin-top: 18px;
-}
-
-.ticket-detail-panel select,
-.ticket-detail-panel button {
-  width: 100%;
-}
-
-.ticket-detail-panel button {
-  margin-top: 6px;
-}
-
-.staff-ticket-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.staff-ticket-actions .btn {
-  padding: 10px 16px;
-  font-size: 0.95rem;
-}
-
-.staff-record-item h4,
-.staff-ticket-item h4 {
+.staff-record-item h4 {
   margin: 0 0 8px;
 }
 
-.staff-ticket-item p,
 .staff-record-item p {
   margin: 6px 0;
   color: var(--muted);
-}
-
-.staff-ticket-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.staff-ticket-actions .btn {
-  padding: 10px 16px;
-  font-size: 0.95rem;
 }
 
 .staff-settings-actions {
@@ -924,6 +840,18 @@ textarea:focus {
   gap: 24px;
 }
 
+.support-grid-single {
+  grid-template-columns: minmax(0, 560px);
+  justify-content: center;
+  text-align: center;
+}
+
+.support-grid-single .support-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .team-hero {
   padding: 100px 0 40px;
 }
@@ -1036,11 +964,6 @@ textarea:focus {
   line-height: 1.8;
 }
 
-.ticket-card form {
-  display: grid;
-  gap: 16px;
-}
-
 label {
   font-weight: 600;
   color: #e8eefc;
@@ -1067,37 +990,6 @@ select {
   background-size: 8px 8px, 8px 8px;
   background-repeat: no-repeat;
   padding-right: 42px;
-}
-
-select.ticket-filter-list {
-  appearance: none;
-  width: auto;
-  min-width: 220px;
-  max-width: 280px;
-  padding-right: 18px;
-  line-height: 1.8;
-  background-image: none;
-  cursor: pointer;
-  border-radius: 22px;
-  overflow: hidden;
-  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-}
-
-select.ticket-filter-list option {
-  padding: 12px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-select.ticket-filter-list option:hover,
-select.ticket-filter-list option:focus {
-  background: rgba(97, 143, 255, 0.18);
-  color: #fff;
-}
-
-select.ticket-filter-list:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.12);
 }
 
 /* Generic visible listbox style used across staff and form selects when we want options shown */
@@ -1190,37 +1082,6 @@ textarea {
   background: rgba(63, 141, 255, 0.12);
   color: #dff5ff;
   border: 1px solid rgba(63, 141, 255, 0.3);
-}
-
-.tickets-list {
-  display: grid;
-  gap: 16px;
-}
-
-.ticket-item {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
-  padding: 22px;
-}
-
-.ticket-item h3 {
-  margin: 0 0 10px;
-}
-
-.ticket-item p {
-  margin: 6px 0;
-  color: var(--muted);
-}
-
-.ticket-status {
-  display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(63, 141, 255, 0.12);
-  color: #dff5ff;
-  font-size: 0.9rem;
-  font-weight: 700;
 }
 
 .apply-section {

@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Waypoint Contact</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="index.html">Waypoint</a>
+      <a class="brand" href="/index.html">Waypoint</a>
       <nav class="nav-links">
-        <a href="index.html">🏠 Home</a>
-        <a href="team.html">👥 Team</a>
-        <a href="rules.html">📜 Game Rules</a>
-        <a href="faq.html">❓ FAQ</a>
-        <a href="contact.html">✉️ Contact</a>
-        <a href="careers.html">💼 Careers</a>
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
       </nav>
       <div class="header-actions">
         <span id="staffStatusText" class="staff-status-text"></span>
@@ -39,7 +39,7 @@
       </div>
       <div class="login-grid">
         <div class="login-banner">
-          <img src="images/banner.png" alt="Waypoint login banner" />
+          <img src="/images/banner.png" alt="Waypoint login banner" />
           <div class="login-banner-copy">
             <p>Waypoint Staff Page</p>
           </div>
@@ -63,55 +63,20 @@
     <section class="page-header">
       <div class="container">
         <h1>Contact Us</h1>
-        <p>Submit a ticket for support, questions, or community help.</p>
+        <p>Reach out for support, questions, or community help.</p>
       </div>
     </section>
 
     <section class="support-section">
-      <div class="container support-grid">
+      <div class="container support-grid support-grid-single">
         <div class="support-card support-info">
           <h2>Need help now?</h2>
-          <p>Join the Discord for live support and announcements.</p>
+          <p>Join the Discord for live support, announcements, and to talk directly with our team.</p>
           <a class="btn btn-secondary" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Open Discord</a>
         </div>
-
-        <div class="support-card ticket-card">
-          <h2>Open a Ticket</h2>
-          <form id="ticketForm">
-            <label for="ticketName">Your name</label>
-            <input type="text" id="ticketName" name="ticketName" required placeholder="Enter your name" />
-
-            <label for="ticketEmail">Email or Roblox username</label>
-            <input type="text" id="ticketEmail" name="ticketEmail" required placeholder="Enter your email or username" />
-
-            <label for="ticketSubject">Subject</label>
-            <input type="text" id="ticketSubject" name="ticketSubject" required placeholder="What is your request about?" />
-
-            <label for="ticketType">Ticket type</label>
-            <select id="ticketType" name="ticketType" class="listbox-show" size="4" required>
-              <option value="General">General</option>
-              <option value="Support">Support</option>
-              <option value="Ban Appeal">Ban Appeal</option>
-              <option value="Other">Other</option>
-            </select>
-
-            <label for="ticketMessage">Message</label>
-            <textarea id="ticketMessage" name="ticketMessage" required placeholder="Tell us what you need."></textarea>
-
-            <button class="btn btn-primary" type="submit">Submit Ticket</button>
-          </form>
-          <div id="ticketResponse" class="response-box"></div>
-        </div>
       </div>
     </section>
 
-    <section class="tickets-list-section">
-      <div class="container">
-        <h2>Your Submitted Tickets</h2>
-        <p>Ticket submissions are saved locally in your browser for reference.</p>
-        <div id="ticketsList" class="tickets-list"></div>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
@@ -120,6 +85,6 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="/script.js"></script>
 </body>
 </html>

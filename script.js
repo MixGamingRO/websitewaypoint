@@ -248,6 +248,26 @@ const staffMembers = [
     title: 'Developer',
     bio: 'Developer helping maintain and expand Waypoint.',
   },
+  {
+    username: 'xDeveloper_Jacobx',
+    userId: null,
+    localImage: 'jacob.png',
+    name: 'xDeveloper_Jacobx',
+    category: 'Management',
+    role: 'Management',
+    title: 'Management',
+    bio: 'Management team member.',
+  },
+  {
+    username: 'Vivacion',
+    userId: null,
+    localImage: 'Vivacion.png',
+    name: 'Vivacion',
+    category: 'Developer',
+    role: 'Developer',
+    title: 'Developer',
+    bio: 'Developer team member.',
+  },
 ];
 
 function isValidEmailAddress(value) {

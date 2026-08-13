@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Waypoint Team</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="index.html">Waypoint</a>
+      <a class="brand" href="/index.html">Waypoint</a>
       <nav class="nav-links">
-        <a href="index.html">🏠 Home</a>
-        <a href="team.html">👥 Team</a>
-        <a href="rules.html">📜 Game Rules</a>
-        <a href="faq.html">❓ FAQ</a>
-        <a href="contact.html">✉️ Contact</a>
-        <a href="careers.html">💼 Careers</a>
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
       </nav>
       <div class="header-actions">
         <span id="staffStatusText" class="staff-status-text"></span>
@@ -39,7 +39,7 @@
       </div>
       <div class="login-grid">
         <div class="login-banner">
-          <img src="images/banner.png" alt="Waypoint login banner" />
+          <img src="/images/banner.png" alt="Waypoint login banner" />
           <div class="login-banner-copy">
             <p>Waypoint Control Room</p>
           </div>
@@ -95,14 +95,14 @@
     <section class="staff-dashboard-section">
       <div class="container">
         <div id="staffLoginPrompt" class="response-box staff-login-prompt">
-          <p>Staff tools are available after logging in from the top right. Login as staff to moderate tickets, issue warnings, and manage bans.</p>
+          <p>Staff tools are available after logging in from the top right. Login as staff to issue warnings, manage bans, and update staff settings.</p>
         </div>
         <div id="staffDashboard" class="staff-dashboard" style="display:none;">
           <div class="staff-dashboard-hero">
             <div>
               <p class="eyebrow">Staff Moderation</p>
               <h2>Waypoint Staff Control Room</h2>
-              <p class="staff-dashboard-subtitle">Search tickets, process moderation requests, and manage staff settings in one workspace.</p>
+              <p class="staff-dashboard-subtitle">Manage player records, handle moderation actions, and oversee staff operations in one workspace.</p>
             </div>
             <div class="staff-dashboard-hero-actions">
               <button id="openBanBtn" class="btn btn-secondary" type="button">New Ban Request</button>
@@ -118,45 +118,6 @@
           </div>
 
           <div class="staff-dashboard-grid">
-            <section class="staff-panel staff-panel-wide staff-panel-overview">
-              <div class="panel-header">
-                <div>
-                  <h3>Ticket Moderation</h3>
-                  <p>Filter and review open tickets, ban appeals, and support requests in one place.</p>
-                </div>
-                <div class="panel-controls">
-                  <label for="ticketFilter">Filter</label>
-                  <select id="ticketFilter" class="ticket-filter-list" size="4">
-                    <option value="all">All tickets</option>
-                    <option value="open">Open tickets</option>
-                    <option value="appeal">Ban appeals</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
-                </div>
-              </div>
-              <div id="staffTicketsList" class="staff-tickets-list"></div>
-              <div id="ticketDetailPanel" class="ticket-detail-panel" style="display:none;">
-                <div class="ticket-detail-header">
-                  <div>
-                    <p class="eyebrow">Ticket details</p>
-                    <h4 id="ticketDetailTitle">Select a ticket to view details</h4>
-                    <p id="ticketDetailMeta" class="ticket-detail-meta"></p>
-                  </div>
-                  <div class="ticket-detail-actions">
-                      <label for="ticketCloseReason">Close as</label>
-                      <select id="ticketCloseReason" class="listbox-show" size="3">
-                        <option value="Resolved">Resolved</option>
-                        <option value="Duplicate">Duplicate</option>
-                        <option value="Insufficient Info">Insufficient Info</option>
-                      </select>
-                    <button id="ticketClosePresetBtn" class="btn btn-primary" type="button">Close ticket</button>
-                  </div>
-                </div>
-                <p id="ticketDetailMessage" class="ticket-detail-message"></p>
-                <div id="ticketDetailActions" class="ticket-detail-actions-row"></div>
-              </div>
-            </section>
-
             <section class="staff-panel staff-panel-wide record-search-panel">
               <div class="panel-header">
                 <div>
@@ -380,6 +341,6 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="/script.js"></script>
 </body>
 </html>

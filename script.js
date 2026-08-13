@@ -90,6 +90,8 @@ const staffAccounts = [
   { username: 'Rocanti', password: 'managementpass', displayName: 'Rocanti', role: 'Management', level: 3, email: '', birthday: '2000-05-06' },
   { username: 'Chowlty', password: 'managementpass', displayName: 'Chowlty', role: 'Management', level: 3, email: '', birthday: '2000-07-28' },
   { username: 'MixBoss28', password: 'managementpass', displayName: 'MixBoss28', role: 'Management', level: 3, email: '', birthday: '2000-08-12' },
+  { username: 'xDeveloper_Jacobx', password: 'managementpass', displayName: 'xDeveloper_Jacobx', role: 'Management', level: 3, email: '', birthday: '2000-06-10' },
+  { username: 'Vivacion', password: 'devpass', displayName: 'Vivacion', role: 'Senior Developer', level: 2, email: '', birthday: '2000-04-22' },
   { username: 'Seby17119', password: 'devpass', displayName: 'Seby17119', role: 'Developer', level: 2, email: '', birthday: '2000-11-02' },
   { username: 'ActualCheddar', password: 'devpass', displayName: 'ActualCheddar', role: 'Developer', level: 2, email: '', birthday: '2000-01-22' },
 ];
@@ -98,6 +100,7 @@ const roleColorMap = {
   Owner: '#5c60d6',
   'Senior Management': '#5c60d6',
   Management: '#7c3aed',
+  'Senior Developer': '#dc2525',
   Developer: '#dc2525',
 };
 
@@ -224,6 +227,26 @@ const staffMembers = [
     bio: 'Management staff keeping Waypoint on track.',
   },
   {
+    username: 'xDeveloper_Jacobx',
+    userId: null,
+    localImage: 'jacob.png',
+    name: 'xDeveloper_Jacobx',
+    category: 'Management',
+    role: 'Management',
+    title: 'Management',
+    bio: 'Management team member driving Waypoint forward.',
+  },
+  {
+    username: 'Vivacion',
+    userId: null,
+    localImage: 'Vivacion.png',
+    name: 'Vivacion',
+    category: 'Developer',
+    role: 'Senior Developer',
+    title: 'Senior Developer',
+    bio: 'Senior developer leading technical initiatives.',
+  },
+  {
     username: 'Seby17119',
     userId: null,
     localImage: 'Seby.png',
@@ -296,12 +319,13 @@ function getActiveStaffDirectory() {
       const profile = profiles[account.username.toLowerCase()] || {};
       const existing = staffMembers.find(member => member.username.toLowerCase() === account.username.toLowerCase());
       const role = account.role || 'Management';
+      const category = role === 'Owner' ? 'Owner' : (role === 'Developer' || role === 'Senior Developer') ? 'Developer' : role;
       return {
         username: account.username,
         userId: existing?.userId ?? null,
         localImage: existing?.localImage ?? null,
         name: account.displayName || account.username,
-        category: role === 'Owner' ? 'Owner' : role === 'Developer' ? 'Developer' : role,
+        category: category,
         role,
         title: role,
         bio: existing?.bio || `${role} team member.`

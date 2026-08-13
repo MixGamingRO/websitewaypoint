@@ -44,6 +44,8 @@ const defaultState = {
     { username: 'Rocanti', password: 'managementpass', displayName: 'Rocanti', role: 'Management', level: 3, email: '', birthday: '2000-05-06' },
     { username: 'Chowlty', password: 'managementpass', displayName: 'Chowlty', role: 'Management', level: 3, email: '', birthday: '2000-07-28' },
     { username: 'MixBoss28', password: 'managementpass', displayName: 'MixBoss28', role: 'Management', level: 3, email: '', birthday: '2000-08-12' },
+    { username: 'xDeveloper_Jacobx', password: 'managementpass', displayName: 'xDeveloper_Jacobx', role: 'Management', level: 3, email: '', birthday: '2000-06-10' },
+    { username: 'Vivacion', password: 'devpass', displayName: 'Vivacion', role: 'Senior Developer', level: 2, email: '', birthday: '2000-04-22' },
     { username: 'Seby17119', password: 'devpass', displayName: 'Seby17119', role: 'Developer', level: 2, email: '', birthday: '2000-11-02' },
     { username: 'ActualCheddar', password: 'devpass', displayName: 'ActualCheddar', role: 'Developer', level: 2, email: '', birthday: '2000-01-22' }
   ],

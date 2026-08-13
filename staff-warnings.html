@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waypoint - Warning Management</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .warning-management-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .warning-form-panel {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .warning-form-panel h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .warning-form-panel input,
+    .warning-form-panel textarea {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .warning-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .warning-card {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      border-left: 4px solid #f59e0b;
+    }
+
+    .warning-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .warning-username {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .warning-count-badge {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fcd34d;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .warning-reason {
+      margin: 12px 0 8px 0;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .warning-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .warning-evidence-link {
+      color: #4fadfe;
+      text-decoration: underline;
+    }
+
+    .warning-filter {
+      margin-bottom: 24px;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .warning-filter button {
+      font-size: 12px;
+      padding: 8px 16px;
+    }
+
+    .warning-filter button.active {
+      background: #4fadfe;
+      color: #1f2937;
+    }
+
+    @media (max-width: 768px) {
+      .warning-management-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="staff-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/index.html">Waypoint</a>
+      <nav class="nav-links">
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/staff-hub.html" class="btn btn-secondary header-cta">← Back to Hub</a>
+        <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <p class="eyebrow">Moderation</p>
+        <h1>Warning Management</h1>
+        <p>Issue player warnings for rule violations. Track warning history and manage player conduct.</p>
+      </div>
+    </section>
+
+    <section class="staff-dashboard-section">
+      <div class="container">
+        <div id="warningManagementContent" style="display:none;">
+          <div class="warning-management-grid">
+            <div class="warning-form-panel">
+              <h3>Issue Warning</h3>
+              <form id="warningForm">
+                <label for="warningUsername">Username</label>
+                <input
+                  type="text"
+                  id="warningUsername"
+                  placeholder="Player username"
+                  required
+                />
+
+                <label for="warningReason">Reason</label>
+                <input
+                  type="text"
+                  id="warningReason"
+                  placeholder="Reason (e.g., RDM, FRP, Spam)"
+                  required
+                />
+
+                <label for="warningEvidence">Evidence (URL or description)</label>
+                <textarea
+                  id="warningEvidence"
+                  placeholder="Link to evidence or description"
+                  rows="2"
+                ></textarea>
+
+                <button class="btn btn-primary" type="submit" style="width: 100%;">
+                  Issue Warning
+                </button>
+              </form>
+              <a href="/staff-hub.html" class="btn btn-secondary" style="width: 100%; margin-top: 12px; text-align: center; display: block;">
+                Back to Hub
+              </a>
+            </div>
+
+            <div class="warning-list">
+              <h3>Recent Warnings</h3>
+              <div class="warning-filter">
+                <button id="filterAll" class="btn btn-secondary active">All</button>
+                <button id="filterRecent" class="btn btn-secondary">Last 24h</button>
+                <button id="filterWeek" class="btn btn-secondary">Last Week</button>
+              </div>
+              <div id="warningListContainer" class="staff-panel-note">
+                Loading warnings...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="warningLoginPrompt" class="response-box staff-login-prompt">
+          <p>You are not logged in. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login to access warning management</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const staffSession = JSON.parse(localStorage.getItem('waypointStaffSession') || 'null');
+    const warningManagementContent = document.getElementById('warningManagementContent');
+    const warningLoginPrompt = document.getElementById('warningLoginPrompt');
+    const warningForm = document.getElementById('warningForm');
+    const warningListContainer = document.getElementById('warningListContainer');
+    const filterButtons = {
+      all: document.getElementById('filterAll'),
+      recent: document.getElementById('filterRecent'),
+      week: document.getElementById('filterWeek')
+    };
+
+    let currentFilter = 'all';
+    let allWarnings = [];
+
+    if (!staffSession || !staffSession.username) {
+      warningManagementContent.style.display = 'none';
+      warningLoginPrompt.style.display = 'block';
+    } else {
+      warningManagementContent.style.display = 'block';
+      warningLoginPrompt.style.display = 'none';
+      loadWarnings();
+    }
+
+    // Filter button handlers
+    filterButtons.all.addEventListener('click', () => {
+      currentFilter = 'all';
+      updateFilterButtons();
+      renderWarnings(allWarnings);
+    });
+
+    filterButtons.recent.addEventListener('click', () => {
+      currentFilter = 'recent';
+      updateFilterButtons();
+      renderWarnings(filterWarningsByTime(allWarnings, 1));
+    });
+
+    filterButtons.week.addEventListener('click', () => {
+      currentFilter = 'week';
+      updateFilterButtons();
+      renderWarnings(filterWarningsByTime(allWarnings, 7));
+    });
+
+    function updateFilterButtons() {
+      Object.values(filterButtons).forEach(btn => btn.classList.remove('active'));
+      if (currentFilter === 'all') filterButtons.all.classList.add('active');
+      if (currentFilter === 'recent') filterButtons.recent.classList.add('active');
+      if (currentFilter === 'week') filterButtons.week.classList.add('active');
+    }
+
+    function filterWarningsByTime(warnings, days) {
+      const now = new Date();
+      return warnings.filter(warning => {
+        const warningDate = new Date(warning.createdAt);
+        const daysOld = (now - warningDate) / (1000 * 60 * 60 * 24);
+        return daysOld <= days;
+      });
+    }
+
+    warningForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('warningUsername').value.trim();
+      const reason = document.getElementById('warningReason').value.trim();
+      const evidence = document.getElementById('warningEvidence').value.trim();
+
+      try {
+        const response = await fetch('/api/warnings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            reason,
+            evidence,
+            issuedBy: staffSession.username
+          })
+        });
+
+        if (response.ok) {
+          alert('Warning issued successfully!');
+          warningForm.reset();
+          loadWarnings();
+        } else {
+          alert('Error issuing warning');
+        }
+      } catch (error) {
+        console.error('Error issuing warning:', error);
+        alert('Error issuing warning');
+      }
+    });
+
+    async function loadWarnings() {
+      try {
+        const response = await fetch('/api/warnings');
+        const data = response.json().then(d => {
+          allWarnings = d.warnings || [];
+          renderWarnings(allWarnings);
+        });
+      } catch (error) {
+        console.error('Error loading warnings:', error);
+        warningListContainer.innerHTML = '<div class="response-box" style="color: #ef4444;">Error loading warnings</div>';
+      }
+    }
+
+    function renderWarnings(warnings) {
+      if (warnings.length === 0) {
+        warningListContainer.innerHTML = '<div class="staff-panel-note">No warnings found</div>';
+        return;
+      }
+
+      // Group warnings by username
+      const warningsByUser = {};
+      warnings.forEach(warning => {
+        if (!warningsByUser[warning.username]) {
+          warningsByUser[warning.username] = [];
+        }
+        warningsByUser[warning.username].push(warning);
+      });
+
+      warningListContainer.innerHTML = Object.entries(warningsByUser).map(([username, userWarnings]) => `
+        <div class="warning-card">
+          <div class="warning-card-header">
+            <h4 class="warning-username">${username}</h4>
+            <span class="warning-count-badge">${userWarnings.length} warning${userWarnings.length !== 1 ? 's' : ''}</span>
+          </div>
+          ${userWarnings.map(warning => `
+            <div style="margin-bottom: 12px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+              <p class="warning-reason"><strong>Reason:</strong> ${warning.reason}</p>
+              <div class="warning-meta">
+                <span><strong>By:</strong> ${warning.issuedBy}</span>
+                <span><strong>Date:</strong> ${warning.createdAt}</span>
+              </div>
+              ${warning.evidence ? `<p><strong>Evidence:</strong> <a href="${warning.evidence}" target="_blank" class="warning-evidence-link">View</a></p>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    // Refresh warnings every 30 seconds
+    setInterval(loadWarnings, 30000);
+  </script>
+</body>
+</html>

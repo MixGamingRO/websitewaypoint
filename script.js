@@ -15,10 +15,14 @@ const staffLoginForm = document.getElementById('staffLoginForm');
 const staffModalClose = document.getElementById('staffModalClose');
 const staffLoginMessage = document.getElementById('staffLoginMessage');
 const passwordVisibilityToggle = document.getElementById('passwordVisibilityToggle');
+const formerStaff = document.getElementById('formerStaff');
 const staffDashboard = document.getElementById('staffDashboard');
 const staffDashboardUser = document.getElementById('staffDashboardUser');
 const staffDashboardRole = document.getElementById('staffDashboardRole');
 const staffDashboardMessage = document.getElementById('staffDashboardMessage');
+const staffGreetingText = document.getElementById('staffGreetingText');
+const staffDateText = document.getElementById('staffDateText');
+const staffTimeText = document.getElementById('staffTimeText');
 const staffLoginPrompt = document.getElementById('staffLoginPrompt');
 const warningForm = document.getElementById('warningForm');
 const openBanBtn = document.getElementById('openBanBtn');
@@ -373,6 +377,68 @@ function renderTeamCategories() {
     .join('');
 }
 
+function getFormerStaffDirectory() {
+  const accounts = getStaffAccounts();
+  const profiles = getStaffProfiles();
+
+  return accounts
+    .filter(account => {
+      const profile = profiles[account.username.toLowerCase()] || {};
+      const status = profile.status || account.status || 'Active';
+      return status === 'Resigned' || status === 'Deactivated' || status === 'On Leave';
+    })
+    .map(account => {
+      const profile = profiles[account.username.toLowerCase()] || {};
+      const existing = staffMembers.find(member => member.username.toLowerCase() === account.username.toLowerCase());
+      const role = account.role || 'Developer';
+      const status = profile.status || account.status || 'Former';
+      return {
+        username: account.username,
+        userId: existing?.userId ?? robloxIdCache[account.username.toLowerCase()] ?? null,
+        localImage: existing?.localImage ?? null,
+        name: account.displayName || account.username,
+        role,
+        title: role,
+        status,
+        bio: existing?.bio || `${role} staff member.`
+      };
+    });
+}
+
+function renderFormerStaff() {
+  if (!formerStaff) return;
+  const formerMembers = getFormerStaffDirectory();
+
+  if (!formerMembers.length) {
+    formerStaff.innerHTML = '<p class="response-box">No former staff members have been recorded yet.</p>';
+    return;
+  }
+
+  formerStaff.innerHTML = `
+    <section class="team-category">
+      <h2>Former Staff</h2>
+      <div class="team-grid">
+        ${formerMembers
+          .map(member => {
+            const color = roleColorMap[member.role] || '#7c3aed';
+            return `
+              <article class="staff-card team-card">
+                <img class="team-avatar" src="${member.localImage ? `/images/${member.localImage}` : getRobloxAvatarUrl(member.userId || 0, 150)}" alt="${member.name} avatar" />
+                <div class="team-body">
+                  <h3>${member.name}</h3>
+                  <p class="team-title">${member.title}</p>
+                  <span class="role-pill" style="background:${color};">${member.role}</span>
+                  <p class="team-bio">${member.status} · ${member.bio}</p>
+                </div>
+              </article>
+            `;
+          })
+          .join('')}
+      </div>
+    </section>
+  `;
+}
+
 function getStaffSession() {
   const stored = localStorage.getItem(staffSessionKey);
   return stored ? JSON.parse(stored) : null;
@@ -494,16 +560,32 @@ function renderWarnings() {
     return;
   }
 
-  warningsList.innerHTML = warnings
-    .map(warning => `
-      <article class="staff-record-item">
-        <h4>${warning.username}</h4>
-        <p><strong>Issued by:</strong> ${warning.issuedBy}</p>
-        <p><strong>Reason:</strong> ${warning.reason}</p>
-        <p><strong>Date:</strong> ${warning.createdAt}</p>
-      </article>
-    `)
-    .join('');
+  const recentWarnings = [...warnings]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 10);
+
+  warningsList.innerHTML = `
+    <div class="recent-moderation-list">
+      ${recentWarnings
+        .map((warning, index) => {
+          const rank = recentWarnings.length - index;
+          return `
+            <article class="recent-moderation-item warning-item">
+              <div class="moderation-rank">#${rank}</div>
+              <div class="moderation-body">
+                <div class="moderation-topline">
+                  <strong>${warning.username}</strong>
+                  <span>${warning.issuedBy}</span>
+                </div>
+                <p>${warning.reason}</p>
+                <small>${warning.createdAt}</small>
+              </div>
+            </article>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
 }
 
 function renderBans() {
@@ -517,18 +599,33 @@ function renderBans() {
     return;
   }
 
-  bansList.innerHTML = bans
-    .map(ban => `
-      <article class="staff-record-item">
-        <h4>${ban.username}</h4>
-        <p><strong>Issued by:</strong> ${ban.issuedBy}</p>
-        <p><strong>Reason:</strong> ${ban.reason}</p>
-        <p><strong>Duration:</strong> ${ban.duration}</p>
-        <p><strong>Date:</strong> ${ban.createdAt}</p>
-        ${allowRevoke ? `<button class="btn btn-secondary revoke-ban-btn" data-ban-id="${ban.id}" type="button">Revoke Ban</button>` : ''}
-      </article>
-    `)
-    .join('');
+  const recentBans = [...bans]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 10);
+
+  bansList.innerHTML = `
+    <div class="recent-moderation-list">
+      ${recentBans
+        .map((ban, index) => {
+          const rank = recentBans.length - index;
+          return `
+            <article class="recent-moderation-item ban-item">
+              <div class="moderation-rank">#${rank}</div>
+              <div class="moderation-body">
+                <div class="moderation-topline">
+                  <strong>${ban.username}</strong>
+                  <span>${ban.duration}</span>
+                </div>
+                <p>${ban.reason}</p>
+                <small>${ban.issuedBy} · ${ban.createdAt}</small>
+                ${allowRevoke ? `<button class="btn btn-secondary revoke-ban-btn" data-ban-id="${ban.id}" type="button">Revoke Ban</button>` : ''}
+              </div>
+            </article>
+          `;
+        })
+        .join('')}
+    </div>
+  `;
 }
 
 function renderStaffStatus() {
@@ -665,17 +762,49 @@ function renderSelectedStaffManagementInfo(username) {
 function resetManagementActionSections() {
   const teamSection = document.querySelector('.action-section.action-team');
   const noteSection = document.querySelector('.action-section.action-note');
+  const warningSection = document.querySelector('.action-section.action-warning');
   const suspendSection = document.querySelector('.action-section.action-suspend');
   if (teamSection) teamSection.style.display = 'none';
   if (noteSection) noteSection.style.display = 'grid';
+  if (warningSection) warningSection.style.display = 'none';
   if (suspendSection) suspendSection.style.display = 'none';
   if (managementNoteText) managementNoteText.value = '';
+  if (managementWarningText) managementWarningText.value = '';
+}
+
+function updateStaffWelcomeClock() {
+  const session = getStaffSession();
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = String(now.getMinutes()).padStart(2, '0');
+  const dateLabel = new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  }).format(now);
+
+  if (staffDateText) {
+    staffDateText.textContent = dateLabel;
+  }
+
+  if (staffTimeText) {
+    staffTimeText.textContent = `${String(hour).padStart(2, '0')}:${minute}`;
+  }
+
+  if (staffGreetingText) {
+    const name = session ? (session.displayName || session.username || 'Staff Member') : 'Staff Member';
+    const timeMessage = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'night';
+    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+    staffGreetingText.textContent = `${greeting}, ${name}! Have a wonderful ${timeMessage}.`;
+  }
 }
 
 function updateStaffDashboard() {
   const session = getStaffSession();
   renderStaffStatus();
   renderBirthdayBanner();
+  updateStaffWelcomeClock();
   if (!staffDashboard) return;
   if (!session) {
     staffDashboard.style.display = 'none';
@@ -696,6 +825,35 @@ function updateStaffDashboard() {
   renderBans();
   renderTeamCategories();
   populateStaffSettings();
+}
+
+function isStaffRoute() {
+  const pathname = window.location.pathname.toLowerCase();
+  return pathname === '/staff' || pathname.endsWith('/staff') || pathname === '/staff.html' || pathname.endsWith('/staff.html');
+}
+
+function handleStaffRouteAccess() {
+  const session = getStaffSession();
+  if (!isStaffRoute()) return;
+
+  const lockedPanel = document.getElementById('staffAccessLocked');
+  const dashboard = document.getElementById('staffDashboard');
+  const loginPrompt = document.getElementById('staffLoginPrompt');
+
+  if (!session) {
+    if (lockedPanel) lockedPanel.style.display = 'block';
+    if (dashboard) dashboard.style.display = 'none';
+    if (loginPrompt) {
+      loginPrompt.style.display = 'block';
+      loginPrompt.innerHTML = '<p>Access restricted. Staff-only portal. Please log in to continue.</p>';
+    }
+    openStaffLogin();
+    return;
+  }
+
+  if (lockedPanel) lockedPanel.style.display = 'none';
+  if (dashboard) dashboard.style.display = 'block';
+  if (loginPrompt) loginPrompt.style.display = 'none';
 }
 
 function openStaffLogin() {
@@ -724,22 +882,27 @@ function setupStaffEventHandlers() {
           staffLoginMessage.style.display = 'block';
           staffLoginMessage.textContent = 'Logged out successfully.';
         }
+        if (window.location.pathname === '/staff' || window.location.pathname === '/staff.html') {
+        window.location.href = '/index.html';
         return;
       }
-      openStaffLogin();
-    });
-  }
+      window.location.href = '/index.html';
+      return;
+    }
+    openStaffLogin();
+  });
+}
 
   if (staffPanelBtn) {
     staffPanelBtn.addEventListener('click', () => {
-      if (window.location.pathname.endsWith('team.html')) {
-        const target = document.getElementById('staffDashboard');
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      } else {
-        window.location.href = '/team.html';
-      }
+      window.location.href = '/staff-hub.html';
+    });
+  }
+
+  const staffPortalLoginBtn = document.getElementById('staffPortalLoginBtn');
+  if (staffPortalLoginBtn) {
+    staffPortalLoginBtn.addEventListener('click', () => {
+      openStaffLogin();
     });
   }
 
@@ -772,23 +935,23 @@ function setupStaffEventHandlers() {
 
         const sessionData = response.session;
         setStaffSession(sessionData);
-        updateStaffDashboard();
         if (staffLoginMessage) {
           staffLoginMessage.style.display = 'block';
           staffLoginMessage.textContent = `Logged in as ${sessionData.displayName}.`;
         }
         closeStaffLogin(true);
+        window.location.href = '/staff-hub.html';
         return;
       } catch (error) {
         const fallbackSession = getLocalStaffSession(username, password);
         if (fallbackSession) {
           setStaffSession(fallbackSession);
-          updateStaffDashboard();
           if (staffLoginMessage) {
             staffLoginMessage.style.display = 'block';
             staffLoginMessage.textContent = `Logged in as ${fallbackSession.displayName} (local fallback).`;
           }
           closeStaffLogin(true);
+          window.location.href = '/staff-hub.html';
           return;
         }
 
@@ -810,10 +973,12 @@ function setupStaffEventHandlers() {
     if (!manageStaffAction) return;
     const action = manageStaffAction.value;
     const noteSection = document.querySelector('.action-section.action-note');
+    const warningSection = document.querySelector('.action-section.action-warning');
     const suspendSection = document.querySelector('.action-section.action-suspend');
     const teamSection = document.querySelector('.action-section.action-team');
 
-    if (noteSection) noteSection.style.display = action === 'note' || action === 'deactivate' || action === 'reactivate' ? 'grid' : 'none';
+    if (noteSection) noteSection.style.display = action === 'note' ? 'grid' : 'none';
+    if (warningSection) warningSection.style.display = action === 'warning' ? 'grid' : 'none';
     if (suspendSection) suspendSection.style.display = action === 'suspend' ? 'grid' : 'none';
     if (teamSection) teamSection.style.display = action === 'changeRole' ? 'grid' : 'none';
   }
@@ -853,6 +1018,18 @@ function setupStaffEventHandlers() {
             body: JSON.stringify({ username, note, issuedBy: session.displayName })
           });
           showResponse(staffDashboardMessage, `Note added to ${username}.`);
+        }
+        if (action === 'warning') {
+          const warning = managementWarningText ? managementWarningText.value.trim() : '';
+          if (!warning) {
+            showResponse(staffDashboardMessage, 'Enter a staff warning reason before saving.', true);
+            return;
+          }
+          await apiRequest('/api/staff/notes', {
+            method: 'POST',
+            body: JSON.stringify({ username, note: `[STAFF WARNING] ${warning}`, issuedBy: session.displayName })
+          });
+          showResponse(staffDashboardMessage, `Staff warning logged for ${username}.`);
         }
         if (action === 'suspend') {
           const duration = managementSuspendDuration ? managementSuspendDuration.value : '1 day';
@@ -1205,22 +1382,39 @@ function setupStaffEventHandlers() {
     leaveButton.addEventListener('click', async () => {
       const session = getStaffSession();
       if (!session) return;
-      try {
-        await apiRequest('/api/staff/profile', {
-          method: 'POST',
-          body: JSON.stringify({ username: session.username, status: 'Leave of Absence' })
-        });
-      } catch (error) {
-        console.warn('Leave-of-absence API call failed, using local fallback:', error.message);
-      }
 
-      const updatedSession = { ...session, status: 'Leave of Absence' };
-      updateStaffProfile(session.username, { status: 'Leave of Absence' });
-      setStaffSession(updatedSession);
-      updateStaffDashboard();
-      if (staffSettingsMessage) {
-        staffSettingsMessage.style.display = 'block';
-        staffSettingsMessage.textContent = 'Your staff status has been updated to Leave of Absence.';
+      const reason = window.prompt('Why are you taking a leave of absence? (Optional details)', 'Personal leave');
+      if (reason === null) return;
+
+      try {
+        const payload = {
+          username: session.username,
+          displayName: session.displayName || session.username,
+          reason: reason || 'Personal leave',
+          startDate: new Date().toISOString().slice(0, 10),
+          endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+          issuedBy: session.username
+        };
+
+        await apiRequest('/api/staff/loa', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        if (staffSettingsMessage) {
+          staffSettingsMessage.style.display = 'block';
+          staffSettingsMessage.textContent = 'Your leave of absence request has been submitted for management review.';
+        }
+      } catch (error) {
+        console.warn('Leave-of-absence request failed, using local fallback:', error.message);
+        const updatedSession = { ...session, status: 'Leave of Absence' };
+        updateStaffProfile(session.username, { status: 'Leave of Absence' });
+        setStaffSession(updatedSession);
+        updateStaffDashboard();
+        if (staffSettingsMessage) {
+          staffSettingsMessage.style.display = 'block';
+          staffSettingsMessage.textContent = 'Your staff status has been updated to Leave of Absence.';
+        }
       }
     });
   }
@@ -1432,6 +1626,10 @@ if (applyForm) {
 initializeStaffAccounts();
 syncFromServer();
 setupStaffEventHandlers();
+handleStaffRouteAccess();
 updateStaffDashboard();
+updateStaffWelcomeClock();
+setInterval(updateStaffWelcomeClock, 1000);
 renderTeamCategories();
+renderFormerStaff();
 refreshRobloxUsernames();

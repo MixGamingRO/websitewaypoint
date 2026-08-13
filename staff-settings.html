@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waypoint - Site Settings</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .settings-container {
+      max-width: 900px;
+      margin: 32px auto;
+    }
+
+    .settings-panel {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .settings-panel h3 {
+      margin-top: 0;
+      font-size: 20px;
+      margin-bottom: 24px;
+    }
+
+    .settings-group {
+      margin-bottom: 32px;
+      padding-bottom: 32px;
+      border-bottom: 1px solid rgba(79, 172, 254, 0.2);
+    }
+
+    .settings-group:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .settings-group h4 {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 16px 0;
+      font-weight: 600;
+    }
+
+    .settings-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      border: 1px solid rgba(79, 172, 254, 0.15);
+    }
+
+    .settings-item-content {
+      flex: 1;
+    }
+
+    .settings-item-label {
+      font-weight: 600;
+      color: #fff;
+      margin: 0 0 4px 0;
+    }
+
+    .settings-item-description {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .settings-item-control {
+      margin-left: 24px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #6b7280;
+      transition: 0.3s;
+      border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: #10b981;
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+
+    .settings-textarea {
+      width: 100%;
+      min-height: 120px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(79, 172, 254, 0.3);
+      border-radius: 8px;
+      color: #fff;
+      padding: 12px;
+      font-family: inherit;
+      margin-top: 8px;
+      resize: vertical;
+    }
+
+    .settings-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+      padding-top: 32px;
+      border-top: 2px solid rgba(79, 172, 254, 0.2);
+    }
+
+    .settings-actions button {
+      padding: 12px 24px;
+      font-size: 14px;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 8px;
+    }
+
+    .status-online {
+      background: #10b981;
+    }
+
+    .status-offline {
+      background: #ef4444;
+    }
+
+    .announcement-box {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .announcement-box label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .announcement-preview {
+      background: rgba(79, 172, 254, 0.1);
+      border: 1px solid rgba(79, 172, 254, 0.3);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
+      min-height: 60px;
+    }
+
+    .announcement-preview:empty::before {
+      content: "Preview will appear here...";
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .settings-message {
+      display: none;
+      margin-top: 24px;
+    }
+
+    @media (max-width: 768px) {
+      .settings-item {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .settings-item-control {
+        margin-left: 0;
+        margin-top: 12px;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body class="staff-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/index.html">Waypoint</a>
+      <nav class="nav-links">
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/staff-hub.html" class="btn btn-secondary header-cta">← Back to Hub</a>
+        <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <p class="eyebrow">Administration</p>
+        <h1>Site Settings</h1>
+        <p>Configure global site settings, features, and announcements. Senior staff and above only.</p>
+      </div>
+    </section>
+
+    <section class="staff-dashboard-section">
+      <div class="container">
+        <div id="settingsContent" style="display:none;">
+          <div class="settings-container">
+            <!-- Announcements -->
+            <div class="settings-panel">
+              <h3>📢 Announcements</h3>
+              <div class="announcement-box">
+                <label for="announcementText">Announcement Message</label>
+                <p style="color: rgba(255, 255, 255, 0.6); font-size: 13px; margin-top: 4px;">This message will be displayed to all players on the site</p>
+                <textarea
+                  id="announcementText"
+                  class="settings-textarea"
+                  placeholder="Enter announcement text (leave empty to disable)..."
+                ></textarea>
+                <div class="announcement-preview" id="announcementPreview"></div>
+              </div>
+            </div>
+
+            <!-- Site Status -->
+            <div class="settings-panel">
+              <h3>🌐 Site Status</h3>
+              <div class="settings-group">
+                <h4>General</h4>
+
+                <div class="settings-item">
+                  <div class="settings-item-content">
+                    <p class="settings-item-label">
+                      Site Online
+                      <span class="status-indicator status-online"></span>
+                    </p>
+                    <p class="settings-item-description">Control whether the site is accessible to players</p>
+                  </div>
+                  <div class="settings-item-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="siteOnlineSetting" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <h4>Features</h4>
+
+                <div class="settings-item">
+                  <div class="settings-item-content">
+                    <p class="settings-item-label">Allow Logins</p>
+                    <p class="settings-item-description">Players can login to their accounts</p>
+                  </div>
+                  <div class="settings-item-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="allowLoginsSetting" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-item-content">
+                    <p class="settings-item-label">Allow Signups</p>
+                    <p class="settings-item-description">New players can create accounts</p>
+                  </div>
+                  <div class="settings-item-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="allowSignupsSetting" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-item-content">
+                    <p class="settings-item-label">Allow Post Creation</p>
+                    <p class="settings-item-description">Players can create forum posts</p>
+                  </div>
+                  <div class="settings-item-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="allowPostCreationSetting" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-item-content">
+                    <p class="settings-item-label">Allow Trades</p>
+                    <p class="settings-item-description">Players can trade items</p>
+                  </div>
+                  <div class="settings-item-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="allowTradesSetting" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-item-content">
+                    <p class="settings-item-label">Allow Reports</p>
+                    <p class="settings-item-description">Players can submit reports</p>
+                  </div>
+                  <div class="settings-item-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="allowReportsSetting" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-item">
+                  <div class="settings-item-content">
+                    <p class="settings-item-label">Allow Password Reset</p>
+                    <p class="settings-item-description">Players can reset their passwords</p>
+                  </div>
+                  <div class="settings-item-control">
+                    <label class="toggle-switch">
+                      <input type="checkbox" id="allowPasswordResetSetting" checked />
+                      <span class="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Save Actions -->
+            <div class="settings-panel">
+              <div class="settings-actions">
+                <button id="saveSiteSettingsBtn" class="btn btn-primary">
+                  💾 Save Settings
+                </button>
+                <button id="resetSettingsBtn" class="btn btn-secondary">
+                  ↻ Reset to Defaults
+                </button>
+              </div>
+              <div id="settingsMessage" class="settings-message response-box"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="settingsLoginPrompt" class="response-box staff-login-prompt">
+          <p>Senior staff access only. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login with a senior staff account</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const staffSession = JSON.parse(localStorage.getItem('waypointStaffSession') || 'null');
+    const settingsContent = document.getElementById('settingsContent');
+    const settingsLoginPrompt = document.getElementById('settingsLoginPrompt');
+
+    // Check if user is senior or above
+    if (!staffSession || !staffSession.username || staffSession.level < 2) {
+      settingsContent.style.display = 'none';
+      settingsLoginPrompt.style.display = 'block';
+    } else {
+      settingsContent.style.display = 'block';
+      settingsLoginPrompt.style.display = 'none';
+      loadSettings();
+    }
+
+    const announcementText = document.getElementById('announcementText');
+    const announcementPreview = document.getElementById('announcementPreview');
+    const saveSiteSettingsBtn = document.getElementById('saveSiteSettingsBtn');
+    const resetSettingsBtn = document.getElementById('resetSettingsBtn');
+    const settingsMessage = document.getElementById('settingsMessage');
+
+    // Settings input references
+    const settingsInputs = {
+      siteOnline: document.getElementById('siteOnlineSetting'),
+      allowLogins: document.getElementById('allowLoginsSetting'),
+      allowSignups: document.getElementById('allowSignupsSetting'),
+      allowPostCreation: document.getElementById('allowPostCreationSetting'),
+      allowTrades: document.getElementById('allowTradesSetting'),
+      allowReports: document.getElementById('allowReportsSetting'),
+      allowPasswordReset: document.getElementById('allowPasswordResetSetting')
+    };
+
+    // Live announcement preview
+    announcementText.addEventListener('input', (e) => {
+      announcementPreview.textContent = e.target.value || 'Preview will appear here...';
+    });
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/settings');
+        const data = await response.json();
+        const settings = data.settings;
+
+        // Populate form
+        announcementText.value = settings.announcement || '';
+        announcementPreview.textContent = settings.announcement || 'Preview will appear here...';
+        settingsInputs.siteOnline.checked = settings.siteOnline !== false;
+        settingsInputs.allowLogins.checked = settings.allowLogins !== false;
+        settingsInputs.allowSignups.checked = settings.allowSignups !== false;
+        settingsInputs.allowPostCreation.checked = settings.allowPostCreation !== false;
+        settingsInputs.allowTrades.checked = settings.allowTrades !== false;
+        settingsInputs.allowReports.checked = settings.allowReports !== false;
+        settingsInputs.allowPasswordReset.checked = settings.allowPasswordReset !== false;
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        showMessage('Error loading settings', 'error');
+      }
+    }
+
+    saveSiteSettingsBtn.addEventListener('click', async () => {
+      try {
+        const response = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            announcement: announcementText.value,
+            siteOnline: settingsInputs.siteOnline.checked,
+            allowLogins: settingsInputs.allowLogins.checked,
+            allowSignups: settingsInputs.allowSignups.checked,
+            allowPostCreation: settingsInputs.allowPostCreation.checked,
+            allowTrades: settingsInputs.allowTrades.checked,
+            allowReports: settingsInputs.allowReports.checked,
+            allowPasswordReset: settingsInputs.allowPasswordReset.checked,
+            issuerLevel: staffSession.level
+          })
+        });
+
+        if (response.ok) {
+          showMessage('Settings saved successfully!', 'success');
+        } else {
+          showMessage('Error saving settings', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showMessage('Error saving settings', 'error');
+      }
+    });
+
+    resetSettingsBtn.addEventListener('click', () => {
+      if (!confirm('Reset all settings to defaults?')) return;
+      loadSettings();
+      showMessage('Settings reset to defaults', 'info');
+    });
+
+    function showMessage(text, type) {
+      settingsMessage.style.display = 'block';
+      settingsMessage.textContent = text;
+      if (type === 'success') {
+        settingsMessage.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+        settingsMessage.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        settingsMessage.style.color = '#86efac';
+      } else if (type === 'error') {
+        settingsMessage.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+        settingsMessage.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        settingsMessage.style.color = '#fca5a5';
+      } else {
+        settingsMessage.style.backgroundColor = 'rgba(79, 172, 254, 0.1)';
+        settingsMessage.style.borderColor = 'rgba(79, 172, 254, 0.3)';
+        settingsMessage.style.color = '#7dd3fc';
+      }
+
+      setTimeout(() => {
+        settingsMessage.style.display = 'none';
+      }, 4000);
+    }
+  </script>
+</body>
+</html>

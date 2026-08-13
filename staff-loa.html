@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waypoint - LOA Requests</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .loa-shell {
+      max-width: 1100px;
+      margin: 32px auto;
+    }
+
+    .loa-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .loa-search {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(79, 172, 254, 0.3);
+      border-radius: 12px;
+      padding: 14px 18px;
+      box-sizing: border-box;
+    }
+
+    .loa-search input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 16px;
+      outline: none;
+    }
+
+    .loa-search input::placeholder {
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .loa-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 22px 0 18px 0;
+    }
+
+    .loa-tab {
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.02);
+      color: rgba(255, 255, 255, 0.8);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .loa-tab.active {
+      background: rgba(79, 172, 254, 0.18);
+      border-color: rgba(79, 172, 254, 0.7);
+      color: #fff;
+    }
+
+    .loa-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .loa-card {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 14px;
+      padding: 20px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .loa-card-main {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .loa-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(79, 172, 254, 0.2), rgba(167, 139, 250, 0.25));
+      border: 1px solid rgba(79, 172, 254, 0.3);
+      font-weight: 700;
+      font-size: 15px;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .loa-content {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .loa-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .loa-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0;
+      color: #fff;
+    }
+
+    .loa-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      min-width: 74px;
+    }
+
+    .status-pending {
+      background: rgba(245, 158, 11, 0.14);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      color: #fbbf24;
+    }
+
+    .status-approved {
+      background: rgba(16, 185, 129, 0.14);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #34d399;
+    }
+
+    .status-denied {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #fca5a5;
+    }
+
+    .loa-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.65);
+      margin-bottom: 8px;
+    }
+
+    .loa-meta span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .loa-reason {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0 0 6px 0;
+    }
+
+    .loa-review {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .loa-actions {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .loa-actions button {
+      padding: 10px 14px;
+      font-size: 13px;
+      min-width: 92px;
+    }
+
+    .loa-review-note {
+      margin-top: 12px;
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 90px;
+    }
+
+    .loa-request-panel {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 22px;
+    }
+
+    .loa-request-panel h3 {
+      margin: 0 0 16px 0;
+      font-size: 20px;
+    }
+
+    .loa-request-form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .loa-inline-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .loa-request-form label {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 8px;
+    }
+
+    .loa-request-form textarea,
+    .loa-request-form input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .loa-status-box {
+      background: rgba(0, 0, 0, 0.18);
+      border: 1px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 18px;
+    }
+
+    .empty-state {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 22px;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    @media (max-width: 760px) {
+      .loa-card {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .loa-actions {
+        width: 100%;
+      }
+
+      .loa-actions button {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body class="staff-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/index.html">Waypoint</a>
+      <nav class="nav-links">
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/staff-hub.html" class="btn btn-secondary header-cta">← Back to Hub</a>
+        <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <p class="eyebrow">Administration</p>
+        <h1>Leave of Absence Requests</h1>
+        <p>Staff can request time away and management can approve or reject the request.</p>
+      </div>
+    </section>
+
+    <section class="staff-dashboard-section">
+      <div class="container loa-shell">
+        <div id="loaContent" style="display:none;">
+          <div id="loaRequestPanel" class="loa-request-panel" style="display:none;">
+            <h3>Request Leave of Absence</h3>
+            <form id="loaRequestForm" class="loa-request-form">
+              <div>
+                <label for="loaReason">Reason</label>
+                <textarea id="loaReason" rows="4" placeholder="Type your reason for leave..." required></textarea>
+              </div>
+
+              <div class="loa-inline-fields">
+                <div>
+                  <label for="loaStartDate">Start date</label>
+                  <input id="loaStartDate" type="date" required />
+                </div>
+                <div>
+                  <label for="loaEndDate">End date</label>
+                  <input id="loaEndDate" type="date" required />
+                </div>
+              </div>
+
+              <button class="btn btn-primary" type="submit">Submit LOA Request</button>
+            </form>
+            <div id="loaRequestMessage" class="response-box" style="display:none; margin-top:16px;"></div>
+          </div>
+
+          <div id="loaManagementPanel" style="display:none;">
+            <div class="loa-toolbar">
+              <div class="loa-search">
+                <span>🔎</span>
+                <input id="loaSearchInput" type="text" placeholder="Search for a user" />
+              </div>
+            </div>
+
+            <div class="loa-tabs">
+              <button class="loa-tab active" data-filter="All" type="button">All <span id="countAll">0</span></button>
+              <button class="loa-tab" data-filter="Pending" type="button">Pending <span id="countPending">0</span></button>
+              <button class="loa-tab" data-filter="Approved" type="button">Approved <span id="countApproved">0</span></button>
+              <button class="loa-tab" data-filter="Denied" type="button">Denied <span id="countDenied">0</span></button>
+            </div>
+
+            <div id="loaReviewNoteWrap" style="margin-bottom:12px; display:block;">
+              <label for="loaDecisionNote" style="display:block; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.7); font-size:12px;">Manager review note</label>
+              <textarea id="loaDecisionNote" class="loa-review-note" placeholder="Type the denial reason here... e.g. missed policy requirement, needs more documentation, etc."></textarea>
+            </div>
+
+            <div id="loaListContainer" class="loa-list"></div>
+          </div>
+
+          <div id="loaStaffStatusPanel" class="loa-status-box" style="display:none;">
+            <h3 style="margin:0 0 12px 0; font-size:18px;">Your LOA Status</h3>
+            <div id="loaStaffStatusList" class="loa-list"></div>
+          </div>
+        </div>
+
+        <div id="loaLoginPrompt" class="response-box staff-login-prompt">
+          <p>Management access only. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login with a management account</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const staffSession = JSON.parse(localStorage.getItem('waypointStaffSession') || 'null');
+    const loaContent = document.getElementById('loaContent');
+    const loaLoginPrompt = document.getElementById('loaLoginPrompt');
+    const loaListContainer = document.getElementById('loaListContainer');
+    const loaRequestPanel = document.getElementById('loaRequestPanel');
+    const loaManagementPanel = document.getElementById('loaManagementPanel');
+    const loaStaffStatusPanel = document.getElementById('loaStaffStatusPanel');
+    const loaSearchInput = document.getElementById('loaSearchInput');
+    const loaTabs = document.querySelectorAll('.loa-tab');
+    const loaRequestForm = document.getElementById('loaRequestForm');
+    const loaRequestMessage = document.getElementById('loaRequestMessage');
+    const loaStaffStatusList = document.getElementById('loaStaffStatusList');
+    const loaDecisionNote = document.getElementById('loaDecisionNote');
+
+    let activeFilter = 'All';
+    let loaRequests = [];
+
+    function showMessage(element, text, isError = false) {
+      if (!element) return;
+      element.style.display = 'block';
+      element.textContent = text;
+      element.style.color = isError ? '#fca5a5' : '#86efac';
+      element.style.background = isError ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)';
+      element.style.borderColor = isError ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)';
+    }
+
+    function getVisibleActiveRequests() {
+      const today = new Date().toISOString().slice(0, 10);
+      return loaRequests.filter(item => {
+        if (item.status === 'Denied') return false;
+        if (item.status === 'Approved' && item.endDate && item.endDate < today) return false;
+        return true;
+      });
+    }
+
+    function getRequestsForCurrentTab() {
+      if (activeFilter === 'Denied') {
+        return loaRequests.filter(item => item.status === 'Denied');
+      }
+      if (activeFilter === 'Approved') {
+        return getVisibleActiveRequests().filter(item => item.status === 'Approved');
+      }
+      if (activeFilter === 'Pending') {
+        return getVisibleActiveRequests().filter(item => item.status === 'Pending');
+      }
+      return getVisibleActiveRequests();
+    }
+
+    function renderCounts() {
+      const active = getVisibleActiveRequests();
+      document.getElementById('countAll').textContent = active.length + loaRequests.filter(item => item.status === 'Denied').length;
+      document.getElementById('countPending').textContent = active.filter(item => item.status === 'Pending').length;
+      document.getElementById('countApproved').textContent = active.filter(item => item.status === 'Approved').length;
+      document.getElementById('countDenied').textContent = loaRequests.filter(item => item.status === 'Denied').length;
+    }
+
+    function renderLOAList() {
+      const searchText = (loaSearchInput ? loaSearchInput.value : '').trim().toLowerCase();
+      const visibleRequests = getRequestsForCurrentTab();
+      const filtered = visibleRequests.filter(item => {
+        const matchesSearch = !searchText || (item.username || '').toLowerCase().includes(searchText) || (item.reason || '').toLowerCase().includes(searchText) || (item.displayName || '').toLowerCase().includes(searchText);
+        return matchesSearch;
+      });
+
+      renderCounts();
+
+      if (!filtered.length) {
+        loaListContainer.innerHTML = '<div class="empty-state">No leave-of-absence requests match this filter.</div>';
+        return;
+      }
+
+      loaListContainer.innerHTML = filtered.map(item => {
+        const statusClass = item.status === 'Approved' ? 'status-approved' : item.status === 'Denied' ? 'status-denied' : 'status-pending';
+        const initials = (item.displayName || item.username || 'U').split(' ').map(part => part[0]).slice(0, 2).join('').toUpperCase();
+        return `
+          <article class="loa-card">
+            <div class="loa-card-main">
+              <div class="loa-avatar">${initials}</div>
+              <div class="loa-content">
+                <div class="loa-header">
+                  <h3 class="loa-name">${item.displayName || item.username}</h3>
+                  <span class="loa-status ${statusClass}">${item.status || 'Pending'}</span>
+                </div>
+                <div class="loa-meta">
+                  <span>👤 ${item.username || 'Unknown user'}</span>
+                  <span>📅 ${item.startDate || '—'} → ${item.endDate || '—'}</span>
+                </div>
+                <p class="loa-reason"><strong>Reason:</strong> ${item.reason || 'No reason provided.'}</p>
+                <p class="loa-review">${item.reviewNote ? `Review note: ${item.reviewNote}` : `Requested on ${new Date(item.createdAt || Date.now()).toLocaleDateString()}`}</p>
+              </div>
+            </div>
+            <div class="loa-actions">
+              <button class="btn btn-primary" data-action="approve" data-id="${item.id}" type="button">Approve</button>
+              <button class="btn btn-secondary" data-action="deny" data-id="${item.id}" type="button">Deny</button>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderStaffStatusList(requests) {
+      if (!loaStaffStatusList) return;
+      const myRequests = [...requests].filter(item => (item.username || '').toLowerCase() === (staffSession?.username || '').toLowerCase()).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+      if (!myRequests.length) {
+        loaStaffStatusList.innerHTML = '<div class="empty-state">No LOA requests submitted yet.</div>';
+        return;
+      }
+
+      loaStaffStatusList.innerHTML = myRequests.map(item => {
+        const statusClass = item.status === 'Approved' ? 'status-approved' : item.status === 'Denied' ? 'status-denied' : 'status-pending';
+        return `
+          <article class="loa-card">
+            <div class="loa-card-main">
+              <div class="loa-content">
+                <div class="loa-header">
+                  <h3 class="loa-name">${item.displayName || item.username}</h3>
+                  <span class="loa-status ${statusClass}">${item.status || 'Pending'}</span>
+                </div>
+                <div class="loa-meta">
+                  <span>📅 ${item.startDate || '—'} → ${item.endDate || '—'}</span>
+                </div>
+                <p class="loa-reason"><strong>Reason:</strong> ${item.reason || 'No reason provided.'}</p>
+                <p class="loa-review">${item.reviewNote ? `Reviewed by ${item.reviewedBy || 'management'}: ${item.reviewNote}` : 'Waiting for management review.'}</p>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    async function loadLOARequests() {
+      try {
+        const response = await fetch('/api/staff/loa');
+        const data = await response.json();
+        loaRequests = Array.isArray(data.requests) ? data.requests : [];
+        renderLOAList();
+        if (staffSession && staffSession.username) {
+          renderStaffStatusList(loaRequests);
+        }
+      } catch (error) {
+        console.error('Error loading leave requests:', error);
+        if (loaListContainer) loaListContainer.innerHTML = '<div class="empty-state">Unable to load leave requests right now.</div>';
+      }
+    }
+
+    async function updateLOA(id, status) {
+      if (!staffSession || !staffSession.username) return;
+      const note = (loaDecisionNote && loaDecisionNote.value.trim()) || (status === 'Approved' ? 'Approved by management' : 'Denied by management');
+
+      if (status === 'Denied' && !note.trim()) {
+        throw new Error('A denial reason is required before denying an LOA request.');
+      }
+
+      const response = await fetch(`/api/staff/loa/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          reviewedBy: staffSession.username,
+          reviewNote: note.trim(),
+          reviewerLevel: staffSession.level
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Could not update leave request');
+      }
+
+      if (loaDecisionNote) loaDecisionNote.value = '';
+      await loadLOARequests();
+    }
+
+    if (!staffSession || !staffSession.username) {
+      loaContent.style.display = 'none';
+      loaLoginPrompt.style.display = 'block';
+    } else {
+      loaContent.style.display = 'block';
+      loaLoginPrompt.style.display = 'none';
+
+      // Every staff member can request LOA; management+ also gets review tools.
+      loaRequestPanel.style.display = 'block';
+      loaStaffStatusPanel.style.display = 'block';
+      loaManagementPanel.style.display = staffSession.level >= 3 ? 'block' : 'none';
+
+      loadLOARequests();
+    }
+
+    if (loaRequestForm) {
+      loaRequestForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const reason = document.getElementById('loaReason').value.trim();
+        const startDate = document.getElementById('loaStartDate').value;
+        const endDate = document.getElementById('loaEndDate').value;
+
+        if (!reason || !startDate || !endDate) {
+          showMessage(loaRequestMessage, 'Please type a reason and choose both dates.', true);
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/staff/loa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: staffSession.username,
+              displayName: staffSession.displayName || staffSession.username,
+              reason,
+              startDate,
+              endDate,
+              issuedBy: staffSession.username,
+              status: 'Pending'
+            })
+          });
+
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(result.error || 'Unable to submit leave request');
+          }
+
+          loaRequestForm.reset();
+          showMessage(loaRequestMessage, 'Your LOA request has been submitted for management review.');
+          await loadLOARequests();
+        } catch (error) {
+          showMessage(loaRequestMessage, error.message || 'Unable to submit leave request.', true);
+        }
+      });
+    }
+
+    loaTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        loaTabs.forEach(item => item.classList.toggle('active', item === tab));
+        activeFilter = tab.dataset.filter || 'All';
+        renderLOAList();
+      });
+    });
+
+    if (loaSearchInput) {
+      loaSearchInput.addEventListener('input', renderLOAList);
+    }
+
+    if (loaDecisionNote) {
+      loaDecisionNote.setAttribute('aria-label', 'Manager review note');
+    }
+
+    loaListContainer.addEventListener('click', async (event) => {
+      const button = event.target.closest('button[data-action]');
+      if (!button) return;
+
+      const action = button.dataset.action;
+      const id = button.dataset.id;
+      if (!id) return;
+
+      const needsReason = action === 'deny';
+      if (needsReason && (!loaDecisionNote || !loaDecisionNote.value.trim())) {
+        alert('You must type a denial reason before denying the LOA request.');
+        loaDecisionNote?.focus();
+        return;
+      }
+
+      try {
+        await updateLOA(id, action === 'approve' ? 'Approved' : 'Denied');
+      } catch (error) {
+        alert(error.message || 'Unable to update request');
+      }
+    });
+  </script>
+</body>
+</html>

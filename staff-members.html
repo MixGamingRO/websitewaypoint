@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waypoint - Staff Members</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .staff-members-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .staff-member-card {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .staff-member-card:hover {
+      border-color: rgba(79, 172, 254, 0.6);
+      background: rgba(79, 172, 254, 0.1);
+    }
+
+    .staff-member-card.active {
+      border-color: #4fadfe;
+      background: rgba(79, 172, 254, 0.15);
+    }
+
+    .staff-member-name {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+    }
+
+    .staff-member-role {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+    }
+
+    .staff-members-list {
+      max-height: 600px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .staff-details-panel {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .staff-details-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid rgba(79, 172, 254, 0.2);
+    }
+
+    .staff-details-name {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .staff-details-role {
+      color: rgba(255, 255, 255, 0.6);
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .staff-details-section {
+      margin-bottom: 20px;
+    }
+
+    .staff-details-section h4 {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin: 0 0 12px 0;
+    }
+
+    .staff-detail-item {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .staff-detail-label {
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .staff-detail-value {
+      font-weight: 600;
+      color: #4fadfe;
+    }
+
+    .staff-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(79, 172, 254, 0.2);
+    }
+
+    .staff-actions button {
+      font-size: 13px;
+      padding: 12px;
+    }
+
+    .staff-member-action-box {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(79, 172, 254, 0.2);
+    }
+
+    .staff-member-action-box label {
+      display: block;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .staff-member-action-box select,
+    .staff-member-action-box textarea {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .staff-member-action-box .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .staff-member-action-box .action-row button {
+      flex: 1;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .staff-member-action-box .action-section {
+      display: none;
+    }
+
+    .staff-member-action-box .action-section.visible {
+      display: block;
+    }
+
+    .loa-date-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .loa-date-row input {
+      width: 100%;
+    }
+
+    .staff-loa-panel {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(79, 172, 254, 0.2);
+    }
+
+    .staff-loa-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .staff-loa-header h4 {
+      margin: 0;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .staff-loa-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .staff-loa-item {
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(79, 172, 254, 0.2);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .staff-loa-item-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .staff-loa-item-name {
+      font-weight: 700;
+      color: #eaf6ff;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .staff-loa-badge {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .staff-loa-badge.pending {
+      background: rgba(245, 158, 11, 0.12);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .staff-loa-badge.approved {
+      background: rgba(16, 185, 129, 0.12);
+      color: #4ade80;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .staff-loa-badge.denied {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .staff-loa-item p {
+      margin: 0 0 8px 0;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .staff-loa-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .staff-loa-actions button {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .create-staff-section {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .create-staff-section h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .create-staff-section input,
+    .create-staff-section select {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .password-display {
+      background: rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(79, 172, 254, 0.3);
+      padding: 12px;
+      border-radius: 6px;
+      margin: 12px 0;
+      font-family: monospace;
+      word-break: break-all;
+    }
+
+    .staff-members-list-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 768px) {
+      .staff-members-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .staff-members-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body class="staff-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/index.html">Waypoint</a>
+      <nav class="nav-links">
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/staff-hub.html" class="btn btn-secondary header-cta">← Back to Hub</a>
+        <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <p class="eyebrow">Administration</p>
+        <h1>Staff Members</h1>
+        <p>Manage staff accounts, reset passwords, and create new staff accounts with auto-generated credentials.</p>
+      </div>
+    </section>
+
+    <section class="staff-dashboard-section">
+      <div class="container">
+        <div id="staffMembersContent" style="display:none;">
+          <div class="staff-members-grid">
+            <div>
+              <div class="staff-members-list-label">Active Staff</div>
+              <div class="staff-members-list" id="staffMembersList">
+                Loading staff members...
+              </div>
+            </div>
+
+            <div>
+              <div id="staffDetailsContainer" style="display:none;">
+                <div class="staff-details-panel">
+                  <div class="staff-details-header">
+                    <div>
+                      <h3 id="staffDetailsName" class="staff-details-name">—</h3>
+                      <p id="staffDetailsRole" class="staff-details-role">—</p>
+                    </div>
+                  </div>
+
+                  <div class="staff-details-section">
+                    <h4>Account Details</h4>
+                    <div class="staff-detail-item">
+                      <span class="staff-detail-label">Username:</span>
+                      <span id="staffDetailsUsername" class="staff-detail-value">—</span>
+                    </div>
+                    <div class="staff-detail-item">
+                      <span class="staff-detail-label">Level:</span>
+                      <span id="staffDetailsLevel" class="staff-detail-value">—</span>
+                    </div>
+                    <div class="staff-detail-item">
+                      <span class="staff-detail-label">Email:</span>
+                      <span id="staffDetailsEmail" class="staff-detail-value">—</span>
+                    </div>
+                    <div class="staff-detail-item">
+                      <span class="staff-detail-label">Birthday:</span>
+                      <span id="staffDetailsBirthday" class="staff-detail-value">—</span>
+                    </div>
+                  </div>
+
+                  <div class="staff-actions">
+                    <button id="resetPasswordBtn" class="btn btn-primary">
+                      🔑 Reset Password
+                    </button>
+                    <button id="editEmailBtn" class="btn btn-secondary">
+                      ✉️ Update Email
+                    </button>
+                    <button id="editBirthdayBtn" class="btn btn-secondary">
+                      🎂 Update Birthday
+                    </button>
+                  </div>
+
+                  <div class="staff-member-action-box">
+                    <label for="staffMemberAction">Action</label>
+                    <select id="staffMemberAction" class="listbox-show" size="7">
+                      <option value="note">Add note</option>
+                      <option value="warning">Staff warning</option>
+                      <option value="loaRequest">Requested LOA</option>
+                      <option value="suspend">Suspend</option>
+                      <option value="deactivate">Deactivate</option>
+                      <option value="reactivate">Reactivate</option>
+                      <option value="changeRole">Move team</option>
+                    </select>
+
+                    <div id="staffMemberActionNoteSection" class="action-section visible">
+                      <label for="staffMemberActionNote">Staff note</label>
+                      <textarea id="staffMemberActionNote" rows="3" placeholder="Leave a note for this staff member"></textarea>
+                    </div>
+
+                    <div id="staffMemberActionWarningSection" class="action-section">
+                      <label for="staffMemberActionWarning">Staff warning reason</label>
+                      <textarea id="staffMemberActionWarning" rows="3" placeholder="Explain the staff warning for this user"></textarea>
+                    </div>
+
+                    <div id="staffMemberActionLOASection" class="action-section">
+                      <label for="staffMemberActionLOAReason">Leave of absence reason</label>
+                      <textarea id="staffMemberActionLOAReason" rows="4" placeholder="Tell management why you need time away"></textarea>
+
+                      <div class="loa-date-row">
+                        <div>
+                          <label for="staffMemberActionLOAStart">Start date</label>
+                          <input id="staffMemberActionLOAStart" type="date" />
+                        </div>
+                        <div>
+                          <label for="staffMemberActionLOAEnd">End date</label>
+                          <input id="staffMemberActionLOAEnd" type="date" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div id="staffMemberActionSuspendSection" class="action-section">
+                      <label for="staffMemberActionSuspendDuration">Suspension length</label>
+                      <select id="staffMemberActionSuspendDuration" class="listbox-show" size="4">
+                        <option value="1 day">1 day</option>
+                        <option value="3 days">3 days</option>
+                        <option value="7 days">7 days</option>
+                        <option value="Permanent">Permanent</option>
+                      </select>
+                    </div>
+
+                    <div id="staffMemberActionRoleSection" class="action-section">
+                      <label for="staffMemberActionRole">New role / team</label>
+                      <select id="staffMemberActionRole" class="listbox-show" size="5">
+                        <option value="Management">Management</option>
+                        <option value="Developer">Developer</option>
+                        <option value="Support">Support</option>
+                        <option value="Moderator">Moderator</option>
+                        <option value="Owner">Owner</option>
+                      </select>
+                    </div>
+
+                    <div class="action-row">
+                      <button id="staffMemberApplyActionBtn" type="button" class="btn btn-primary">Apply action</button>
+                      <button id="staffMemberClearActionBtn" type="button" class="btn btn-secondary">Clear</button>
+                    </div>
+                    <div id="staffMemberActionMessage" class="response-box" style="display:none; margin-top:12px;"></div>
+                  </div>
+
+                  <div class="staff-loa-panel">
+                    <div class="staff-loa-header">
+                      <h4>LOA Review</h4>
+                      <button id="staffMemberRefreshLOABtn" type="button" class="btn btn-secondary" style="padding: 8px 10px; font-size: 12px;">Refresh</button>
+                    </div>
+                    <div id="staffMemberLOAList" class="staff-loa-list">
+                      Loading LOA requests...
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div id="emptyStateContainer">
+                <div class="staff-panel-note">
+                  Select a staff member to view details
+                </div>
+              </div>
+
+              <div class="create-staff-section">
+                <h3>Create New Staff Account</h3>
+                <p style="color: rgba(255, 255, 255, 0.6); margin: 0 0 16px 0;">Auto-generates a secure password and creates an LMS message</p>
+                <form id="createStaffForm">
+                  <label for="newUsername">Username</label>
+                  <input type="text" id="newUsername" placeholder="Staff username" required />
+
+                  <label for="newRole">Role</label>
+                  <select id="newRole" required>
+                    <option value="">Select role</option>
+                    <option value="Developer">Developer</option>
+                    <option value="Senior Developer">Senior Developer</option>
+                    <option value="Management">Management</option>
+                    <option value="Owner">Owner</option>
+                  </select>
+
+                  <label for="newDisplayName">Display Name</label>
+                  <input type="text" id="newDisplayName" placeholder="Display name (optional)" />
+
+                  <label for="newEmail">Email</label>
+                  <input type="email" id="newEmail" placeholder="Staff email (optional)" />
+
+                  <label for="newBirthday">Birthday</label>
+                  <input type="date" id="newBirthday" />
+
+                  <button class="btn btn-primary" type="submit" style="width: 100%;">
+                    Create Account
+                  </button>
+                </form>
+                <div id="createStaffMessage" class="response-box" style="display:none; margin-top: 16px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="staffMembersLoginPrompt" class="response-box staff-login-prompt">
+          <p>Management access only. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login with a management account</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const staffSession = JSON.parse(localStorage.getItem('waypointStaffSession') || 'null');
+    const staffMembersContent = document.getElementById('staffMembersContent');
+    const staffMembersLoginPrompt = document.getElementById('staffMembersLoginPrompt');
+    const staffMembersList = document.getElementById('staffMembersList');
+    const staffDetailsContainer = document.getElementById('staffDetailsContainer');
+    const emptyStateContainer = document.getElementById('emptyStateContainer');
+    const staffMemberAction = document.getElementById('staffMemberAction');
+    const staffMemberActionNote = document.getElementById('staffMemberActionNote');
+    const staffMemberActionWarning = document.getElementById('staffMemberActionWarning');
+    const staffMemberActionLOAReason = document.getElementById('staffMemberActionLOAReason');
+    const staffMemberActionLOAStart = document.getElementById('staffMemberActionLOAStart');
+    const staffMemberActionLOAEnd = document.getElementById('staffMemberActionLOAEnd');
+    const staffMemberActionSuspendDuration = document.getElementById('staffMemberActionSuspendDuration');
+    const staffMemberActionRole = document.getElementById('staffMemberActionRole');
+    const staffMemberActionMessage = document.getElementById('staffMemberActionMessage');
+    const staffMemberLOAList = document.getElementById('staffMemberLOAList');
+
+    let selectedStaffUsername = null;
+    let allStaffAccounts = [];
+    let loaRequests = [];
+
+    function showStaffActionMessage(message, isError = false) {
+      if (!staffMemberActionMessage) return;
+      staffMemberActionMessage.style.display = 'block';
+      staffMemberActionMessage.textContent = message;
+      staffMemberActionMessage.style.color = isError ? '#ef4444' : '#86efac';
+      staffMemberActionMessage.style.background = isError ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)';
+      staffMemberActionMessage.style.borderColor = isError ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)';
+    }
+
+    function setStaffActionSectionVisibility() {
+      const action = staffMemberAction ? staffMemberAction.value : 'note';
+      const noteSection = document.getElementById('staffMemberActionNoteSection');
+      const warningSection = document.getElementById('staffMemberActionWarningSection');
+      const loaSection = document.getElementById('staffMemberActionLOASection');
+      const suspendSection = document.getElementById('staffMemberActionSuspendSection');
+      const roleSection = document.getElementById('staffMemberActionRoleSection');
+
+      if (noteSection) noteSection.classList.toggle('visible', action === 'note');
+      if (warningSection) warningSection.classList.toggle('visible', action === 'warning');
+      if (loaSection) loaSection.classList.toggle('visible', action === 'loaRequest');
+      if (suspendSection) suspendSection.classList.toggle('visible', action === 'suspend');
+      if (roleSection) roleSection.classList.toggle('visible', action === 'changeRole');
+    }
+
+    async function loadLOARequests() {
+      try {
+        const response = await fetch('/api/staff/loa');
+        const data = await response.json();
+        loaRequests = Array.isArray(data.requests) ? data.requests : [];
+        renderLOARequests();
+      } catch (error) {
+        if (staffMemberLOAList) {
+          staffMemberLOAList.innerHTML = '<div class="response-box" style="color: #ef4444;">Unable to load LOA requests.</div>';
+        }
+      }
+    }
+
+    function renderLOARequests() {
+      if (!staffMemberLOAList) return;
+
+      const requests = [...loaRequests].sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+      if (!requests.length) {
+        staffMemberLOAList.innerHTML = '<div class="response-box">No leave-of-absence requests have been submitted yet.</div>';
+        return;
+      }
+
+      staffMemberLOAList.innerHTML = requests.map(item => {
+        const badgeClass = item.status === 'Approved' ? 'approved' : item.status === 'Denied' ? 'denied' : 'pending';
+        return `
+          <div class="staff-loa-item">
+            <div class="staff-loa-item-top">
+              <p class="staff-loa-item-name">${item.displayName || item.username || 'Staff member'}</p>
+              <span class="staff-loa-badge ${badgeClass}">${item.status || 'Pending'}</span>
+            </div>
+            <p><strong>Username:</strong> ${item.username || '—'}</p>
+            <p><strong>Dates:</strong> ${item.startDate || '—'} → ${item.endDate || '—'}</p>
+            <p><strong>Reason:</strong> ${item.reason || 'No reason provided.'}</p>
+            <div class="staff-loa-actions">
+              <button type="button" class="btn btn-primary" data-loa-action="approve" data-loa-id="${item.id}">Approve</button>
+              <button type="button" class="btn btn-secondary" data-loa-action="deny" data-loa-id="${item.id}">Deny</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function updateLOAStatus(id, status) {
+      const response = await fetch(`/api/staff/loa/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status,
+          reviewedBy: staffSession.username,
+          reviewNote: status === 'Approved' ? 'Approved from staff members panel' : 'Denied from staff members panel',
+          reviewerLevel: staffSession.level
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Unable to update leave request');
+      }
+
+      await loadLOARequests();
+    }
+
+    // Check if user is management or above
+    if (!staffSession || !staffSession.username || staffSession.level < 3) {
+      staffMembersContent.style.display = 'none';
+      staffMembersLoginPrompt.style.display = 'block';
+    } else {
+      staffMembersContent.style.display = 'block';
+      staffMembersLoginPrompt.style.display = 'none';
+      updateAvailableRoles(); // Filter roles based on current user level
+      loadStaffMembers();
+      loadLOARequests();
+    }
+
+    // Filter available roles based on staff level
+    function updateAvailableRoles() {
+      const newRoleSelect = document.getElementById('newRole');
+      const currentUserLevel = staffSession.level;
+      
+      // Clear existing options except the placeholder
+      while (newRoleSelect.options.length > 1) {
+        newRoleSelect.remove(1);
+      }
+      
+      // Add available roles
+      const roleMap = [
+        { name: 'Developer', level: 2 },
+        { name: 'Senior Developer', level: 2 },
+        { name: 'Management', level: 3 },
+        { name: 'Owner', level: 4 }
+      ];
+      
+      roleMap.forEach(role => {
+        // Can only create roles strictly below current level
+        if (role.level < currentUserLevel) {
+          const option = document.createElement('option');
+          option.value = role.name;
+          option.textContent = role.name;
+          newRoleSelect.appendChild(option);
+        }
+      });
+      
+      if (newRoleSelect.options.length === 1) {
+        // Only placeholder, user has no available roles to create
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = 'No roles available to create';
+        option.disabled = true;
+        newRoleSelect.appendChild(option);
+      }
+    }
+
+    async function loadStaffMembers() {
+      try {
+        const response = await fetch('/api/staff/accounts');
+        const data = await response.json();
+        allStaffAccounts = data.accounts || [];
+        renderStaffList();
+      } catch (error) {
+        console.error('Error loading staff:', error);
+        staffMembersList.innerHTML = '<div class="response-box" style="color: #ef4444;">Error loading staff</div>';
+      }
+    }
+
+    function renderStaffList() {
+      staffMembersList.innerHTML = allStaffAccounts.map(account => `
+        <div class="staff-member-card" onclick="selectStaff('${account.username}', this)">
+          <h4 class="staff-member-name">${account.displayName}</h4>
+          <p class="staff-member-role">${account.role}</p>
+        </div>
+      `).join('');
+    }
+
+    window.selectStaff = (username, cardElement) => {
+      selectedStaffUsername = username;
+      const account = allStaffAccounts.find(a => a.username === username);
+      if (!account) return;
+
+      staffDetailsContainer.style.display = 'block';
+      emptyStateContainer.style.display = 'none';
+
+      document.getElementById('staffDetailsName').textContent = account.displayName;
+      document.getElementById('staffDetailsRole').textContent = account.role;
+      document.getElementById('staffDetailsUsername').textContent = account.username;
+      document.getElementById('staffDetailsLevel').textContent = account.level;
+      document.getElementById('staffDetailsEmail').textContent = account.email || '—';
+      document.getElementById('staffDetailsBirthday').textContent = account.birthday || '—';
+
+      document.querySelectorAll('.staff-member-card').forEach(card => card.classList.remove('active'));
+      if (cardElement) cardElement.classList.add('active');
+    };
+
+    if (staffMemberAction) {
+      staffMemberAction.addEventListener('change', setStaffActionSectionVisibility);
+      setStaffActionSectionVisibility();
+    }
+
+    document.getElementById('staffMemberClearActionBtn').addEventListener('click', () => {
+      if (staffMemberAction) staffMemberAction.value = 'note';
+      if (staffMemberActionNote) staffMemberActionNote.value = '';
+      if (staffMemberActionWarning) staffMemberActionWarning.value = '';
+      if (staffMemberActionLOAReason) staffMemberActionLOAReason.value = '';
+      if (staffMemberActionLOAStart) staffMemberActionLOAStart.value = '';
+      if (staffMemberActionLOAEnd) staffMemberActionLOAEnd.value = '';
+      if (staffMemberActionMessage) staffMemberActionMessage.style.display = 'none';
+      setStaffActionSectionVisibility();
+    });
+
+    if (staffMemberLOAList) {
+      staffMemberLOAList.addEventListener('click', async (event) => {
+        const button = event.target.closest('[data-loa-action]');
+        if (!button) return;
+
+        const id = button.getAttribute('data-loa-id');
+        const action = button.getAttribute('data-loa-action');
+        if (!id || !action) return;
+
+        try {
+          await updateLOAStatus(id, action === 'approve' ? 'Approved' : 'Denied');
+          showStaffActionMessage(`LOA request ${action === 'approve' ? 'approved' : 'denied'} successfully.`);
+        } catch (error) {
+          showStaffActionMessage(error.message || 'Unable to review LOA', true);
+        }
+      });
+    }
+
+    document.getElementById('staffMemberRefreshLOABtn').addEventListener('click', loadLOARequests);
+
+    document.getElementById('staffMemberApplyActionBtn').addEventListener('click', async () => {
+      if (!selectedStaffUsername) {
+        showStaffActionMessage('Select a staff member first.', true);
+        return;
+      }
+
+      const action = staffMemberAction ? staffMemberAction.value : 'note';
+      const payload = { username: selectedStaffUsername, issuedBy: staffSession.username, issuerLevel: staffSession.level };
+
+      try {
+        if (action === 'note') {
+          const note = staffMemberActionNote ? staffMemberActionNote.value.trim() : '';
+          if (!note) {
+            showStaffActionMessage('Enter a note before saving.', true);
+            return;
+          }
+          await fetch('/api/staff/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...payload, note })
+          });
+          showStaffActionMessage(`Note added to ${selectedStaffUsername}.`);
+        } else if (action === 'warning') {
+          const warning = staffMemberActionWarning ? staffMemberActionWarning.value.trim() : '';
+          if (!warning) {
+            showStaffActionMessage('Enter a staff warning reason before saving.', true);
+            return;
+          }
+          await fetch('/api/staff/notes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...payload, note: `[STAFF WARNING] ${warning}` })
+          });
+          showStaffActionMessage(`Staff warning logged for ${selectedStaffUsername}.`);
+        } else if (action === 'loaRequest') {
+          const reason = staffMemberActionLOAReason ? staffMemberActionLOAReason.value.trim() : '';
+          const startDate = staffMemberActionLOAStart ? staffMemberActionLOAStart.value : '';
+          const endDate = staffMemberActionLOAEnd ? staffMemberActionLOAEnd.value : '';
+
+          if (!reason || !startDate || !endDate) {
+            showStaffActionMessage('Add a reason and both dates before requesting LOA.', true);
+            return;
+          }
+
+          const response = await fetch('/api/staff/loa', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: selectedStaffUsername,
+              displayName: selectedStaffUsername,
+              reason,
+              startDate,
+              endDate,
+              issuedBy: staffSession.username,
+              status: 'Pending'
+            })
+          });
+
+          const result = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(result.error || 'Could not submit leave request');
+          }
+
+          showStaffActionMessage(`LOA request submitted for ${selectedStaffUsername}.`);
+          if (staffMemberActionLOAReason) staffMemberActionLOAReason.value = '';
+          if (staffMemberActionLOAStart) staffMemberActionLOAStart.value = '';
+          if (staffMemberActionLOAEnd) staffMemberActionLOAEnd.value = '';
+          await loadLOARequests();
+        } else if (action === 'suspend') {
+          const duration = staffMemberActionSuspendDuration ? staffMemberActionSuspendDuration.value : '1 day';
+          await fetch(`/api/staff/accounts/${encodeURIComponent(selectedStaffUsername)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: `Suspended (${duration})`, issuedBy: staffSession.username, issuerLevel: staffSession.level })
+          });
+          showStaffActionMessage(`${selectedStaffUsername} has been suspended for ${duration}.`);
+        } else if (action === 'deactivate') {
+          await fetch(`/api/staff/accounts/${encodeURIComponent(selectedStaffUsername)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'Deactivated', issuedBy: staffSession.username, issuerLevel: staffSession.level })
+          });
+          showStaffActionMessage(`${selectedStaffUsername} has been deactivated.`);
+        } else if (action === 'reactivate') {
+          await fetch(`/api/staff/accounts/${encodeURIComponent(selectedStaffUsername)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'Active', issuedBy: staffSession.username, issuerLevel: staffSession.level })
+          });
+          showStaffActionMessage(`${selectedStaffUsername} has been reactivated.`);
+        } else if (action === 'changeRole') {
+          const newRole = staffMemberActionRole ? staffMemberActionRole.value : '';
+          if (!newRole) {
+            showStaffActionMessage('Select a new team role first.', true);
+            return;
+          }
+          await fetch(`/api/staff/accounts/${encodeURIComponent(selectedStaffUsername)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role: newRole, issuedBy: staffSession.username, issuerLevel: staffSession.level })
+          });
+          showStaffActionMessage(`${selectedStaffUsername} was moved to ${newRole}.`);
+        }
+
+        await loadStaffMembers();
+        const selected = allStaffAccounts.find(account => account.username === selectedStaffUsername);
+        if (selected) {
+          document.getElementById('staffDetailsName').textContent = selected.displayName;
+          document.getElementById('staffDetailsRole').textContent = selected.role;
+          document.getElementById('staffDetailsLevel').textContent = selected.level;
+        }
+      } catch (error) {
+        showStaffActionMessage(error.message || 'Action failed.', true);
+      }
+    });
+
+    // Password reset
+    document.getElementById('resetPasswordBtn').addEventListener('click', async () => {
+      if (!selectedStaffUsername) return;
+      if (!confirm('Reset password for this staff member? They will receive a new password.')) return;
+
+      try {
+        const response = await fetch('/api/staff/reset-password', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            targetUsername: selectedStaffUsername,
+            issuedBy: staffSession.username,
+            issuerLevel: staffSession.level
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          alert(`New password generated: ${data.newPassword}\n\nSend this to the staff member via LMS!`);
+        } else {
+          alert('Error resetting password');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Error resetting password');
+      }
+    });
+
+    // Create staff form
+    document.getElementById('createStaffForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('newUsername').value.trim();
+      const role = document.getElementById('newRole').value;
+      const displayName = document.getElementById('newDisplayName').value.trim();
+      const email = document.getElementById('newEmail').value.trim();
+      const birthday = document.getElementById('newBirthday').value;
+
+      const messageDiv = document.getElementById('createStaffMessage');
+
+      try {
+        const roleMap = {
+          'Developer': 2,
+          'Senior Developer': 2,
+          'Management': 3,
+          'Owner': 4
+        };
+        
+        const response = await fetch('/api/staff/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            displayName: displayName || username,
+            role,
+            level: roleMap[role] || 3,
+            email,
+            birthday,
+            issuedBy: staffSession.username,
+            issuerLevel: staffSession.level
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const password = data.generatedPassword;
+          
+          messageDiv.style.display = 'block';
+          messageDiv.className = 'response-box';
+          messageDiv.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+          messageDiv.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+          messageDiv.style.color = '#86efac';
+          messageDiv.innerHTML = `
+            <strong>✓ Account Created!</strong><br>
+            Username: <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; font-family: monospace;">${username}</code><br>
+            Password: <code style="background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; font-family: monospace;">${password}</code><br>
+            <br>
+            <strong>Send this LMS message to ${displayName || username}:</strong><br>
+            <div class="password-display">
+📋 **Your Waypoint Staff Account**
+
+Hey ${displayName || username}! Your staff account has been created.
+
+**Login Credentials:**
+- Username: ${username}
+- Password: ${password}
+
+Please log in at https://waypoint.com/staff.html and change your password immediately for security.
+
+If you have any issues, contact management.
+            </div>
+          `;
+
+          document.getElementById('createStaffForm').reset();
+          loadStaffMembers();
+        } else {
+          const error = await response.json();
+          messageDiv.style.display = 'block';
+          messageDiv.className = 'response-box';
+          messageDiv.style.color = '#ef4444';
+          messageDiv.textContent = error.error || 'Error creating account';
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        messageDiv.style.display = 'block';
+        messageDiv.className = 'response-box';
+        messageDiv.style.color = '#ef4444';
+        messageDiv.textContent = 'Error creating account';
+      }
+    });
+  </script>
+</body>
+</html>

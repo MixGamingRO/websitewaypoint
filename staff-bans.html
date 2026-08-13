@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waypoint - Ban Management</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .ban-management-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .ban-form-panel {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .ban-form-panel h3 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .ban-form-panel input,
+    .ban-form-panel select,
+    .ban-form-panel textarea {
+      width: 100%;
+      margin-bottom: 12px;
+    }
+
+    .ban-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .ban-card {
+      background: rgba(79, 172, 254, 0.05);
+      border: 2px solid rgba(79, 172, 254, 0.2);
+      border-radius: 12px;
+      padding: 20px;
+      border-left: 4px solid #ef4444;
+    }
+
+    .ban-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 12px;
+    }
+
+    .ban-username {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+    }
+
+    .ban-duration-badge {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.5);
+      color: #fca5a5;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .ban-reason {
+      margin: 12px 0 8px 0;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .ban-meta {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: 12px;
+    }
+
+    .ban-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ban-actions button {
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+
+    .ban-evidence-link {
+      color: #4fadfe;
+      text-decoration: underline;
+    }
+
+    .approval-status {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .approval-pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+    }
+
+    .approval-approved {
+      background: rgba(16, 185, 129, 0.2);
+      color: #86efac;
+    }
+
+    .approval-section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(79, 172, 254, 0.2);
+    }
+
+    .approval-section h5 {
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .approval-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    .approval-buttons button {
+      font-size: 12px;
+      padding: 6px 12px;
+      flex: 1;
+    }
+
+    @media (max-width: 768px) {
+      .ban-management-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="staff-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/index.html">Waypoint</a>
+      <nav class="nav-links">
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
+      </nav>
+      <div class="header-actions">
+        <a href="/staff-hub.html" class="btn btn-secondary header-cta">← Back to Hub</a>
+        <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <p class="eyebrow">Moderation</p>
+        <h1>Ban Management</h1>
+        <p>Create new bans, review existing bans, and manage ban approvals for senior staff.</p>
+      </div>
+    </section>
+
+    <section class="staff-dashboard-section">
+      <div class="container">
+        <div id="banManagementContent" style="display:none;">
+          <div class="ban-management-grid">
+            <div class="ban-form-panel">
+              <h3>Issue New Ban</h3>
+              <form id="banForm">
+                <label for="banUsername">Username</label>
+                <input
+                  type="text"
+                  id="banUsername"
+                  placeholder="Player username"
+                  required
+                />
+
+                <label for="banReason">Reason</label>
+                <input
+                  type="text"
+                  id="banReason"
+                  placeholder="Ban reason (e.g., RDM, Cheating)"
+                  required
+                />
+
+                <label for="banDuration">Duration</label>
+                <select id="banDuration" required>
+                  <option value="">Select duration</option>
+                  <option value="1 Day">1 Day</option>
+                  <option value="3 Days">3 Days</option>
+                  <option value="7 Days">7 Days</option>
+                  <option value="30 Days">30 Days</option>
+                  <option value="Permanent">Permanent</option>
+                </select>
+
+                <label for="banEvidence">Evidence (URL or description)</label>
+                <textarea
+                  id="banEvidence"
+                  placeholder="Link to evidence or description"
+                  rows="2"
+                ></textarea>
+
+                <button class="btn btn-primary" type="submit" style="width: 100%;">
+                  Issue Ban
+                </button>
+              </form>
+              <a href="/staff-hub.html" class="btn btn-secondary" style="width: 100%; margin-top: 12px; text-align: center; display: block;">
+                Back to Hub
+              </a>
+            </div>
+
+            <div class="ban-list">
+              <h3>Active Bans</h3>
+              <div id="banListContainer" class="staff-panel-note">
+                Loading bans...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="banLoginPrompt" class="response-box staff-login-prompt">
+          <p>You are not logged in. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login to access ban management</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const staffSession = JSON.parse(localStorage.getItem('waypointStaffSession') || 'null');
+    const banManagementContent = document.getElementById('banManagementContent');
+    const banLoginPrompt = document.getElementById('banLoginPrompt');
+    const banForm = document.getElementById('banForm');
+    const banListContainer = document.getElementById('banListContainer');
+
+    if (!staffSession || !staffSession.username) {
+      banManagementContent.style.display = 'none';
+      banLoginPrompt.style.display = 'block';
+    } else {
+      banManagementContent.style.display = 'block';
+      banLoginPrompt.style.display = 'none';
+      loadBans();
+    }
+
+    banForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('banUsername').value.trim();
+      const reason = document.getElementById('banReason').value.trim();
+      const duration = document.getElementById('banDuration').value;
+      const evidence = document.getElementById('banEvidence').value.trim();
+
+      try {
+        const response = await fetch('/api/bans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            reason,
+            evidence,
+            duration,
+            issuedBy: staffSession.username
+          })
+        });
+
+        if (response.ok) {
+          alert('Ban issued successfully!');
+          banForm.reset();
+          loadBans();
+        } else {
+          alert('Error issuing ban');
+        }
+      } catch (error) {
+        console.error('Error issuing ban:', error);
+        alert('Error issuing ban');
+      }
+    });
+
+    async function loadBans() {
+      try {
+        const response = await fetch('/api/bans');
+        const data = await response.json();
+        const bans = data.bans || [];
+
+        if (bans.length === 0) {
+          banListContainer.innerHTML = '<div class="staff-panel-note">No bans on record</div>';
+          return;
+        }
+
+        banListContainer.innerHTML = bans.map(ban => {
+          const banDate = new Date(ban.createdAt);
+          const now = new Date();
+          const daysOld = Math.floor((now - banDate) / (1000 * 60 * 60 * 24));
+          const requiresApproval = daysOld >= 7;
+
+          return `
+            <div class="ban-card">
+              <div class="ban-card-header">
+                <h4 class="ban-username">${ban.username}</h4>
+                <span class="ban-duration-badge">${ban.duration}</span>
+              </div>
+              <p class="ban-reason"><strong>Reason:</strong> ${ban.reason}</p>
+              <div class="ban-meta">
+                <span><strong>Issued by:</strong> ${ban.issuedBy}</span>
+                <span><strong>Date:</strong> ${ban.createdAt}</span>
+                ${requiresApproval ? `<span style="color: #fbbf24;"><strong>⚠️ Requires Senior Approval</strong></span>` : ''}
+              </div>
+              ${ban.evidence ? `<p><strong>Evidence:</strong> <a href="${ban.evidence}" target="_blank" class="ban-evidence-link">View</a></p>` : ''}
+              
+              <div class="ban-actions">
+                ${staffSession.level >= 3 ? `
+                  <button class="btn btn-secondary" onclick="revokeBan('${ban.id}')">Revoke Ban</button>
+                ` : ''}
+              </div>
+
+              ${requiresApproval && staffSession.level >= 2 ? `
+                <div class="approval-section">
+                  <h5>Senior Approval Required</h5>
+                  <div class="approval-buttons">
+                    <button class="btn btn-primary" onclick="approveBan('${ban.id}', true)">✓ Approve</button>
+                    <button class="btn btn-secondary" onclick="approveBan('${ban.id}', false)">✗ Reject</button>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      } catch (error) {
+        console.error('Error loading bans:', error);
+        banListContainer.innerHTML = '<div class="response-box" style="color: #ef4444;">Error loading bans</div>';
+      }
+    }
+
+    async function revokeBan(banId) {
+      if (!confirm('Are you sure you want to revoke this ban?')) return;
+
+      try {
+        const response = await fetch(`/api/bans/${banId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            issuedBy: staffSession.username,
+            issuerLevel: staffSession.level
+          })
+        });
+
+        if (response.ok) {
+          alert('Ban revoked!');
+          loadBans();
+        } else {
+          alert('Error revoking ban');
+        }
+      } catch (error) {
+        console.error('Error revoking ban:', error);
+        alert('Error revoking ban');
+      }
+    }
+
+    async function approveBan(banId, approved) {
+      try {
+        const response = await fetch(`/api/bans/${banId}/approval`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            approved,
+            approvedBy: staffSession.username,
+            approverLevel: staffSession.level
+          })
+        });
+
+        if (response.ok) {
+          alert(approved ? 'Ban approved!' : 'Ban rejected!');
+          loadBans();
+        } else {
+          alert('Error updating approval status');
+        }
+      } catch (error) {
+        console.error('Error updating approval:', error);
+        alert('Error updating approval');
+      }
+    }
+
+    // Refresh bans every 30 seconds
+    setInterval(loadBans, 30000);
+  </script>
+</body>
+</html>

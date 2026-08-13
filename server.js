@@ -39,6 +39,7 @@ let mongoCollection = null;
 const defaultState = {
   warnings: [],
   bans: [],
+  leaveRequests: [],
   staffAccounts: [
     { username: 'mcrnathan', password: 'ownerpass', displayName: 'mcrnathan', role: 'Owner', level: 4, email: '', birthday: '2000-03-15' },
     { username: 'Rocanti', password: 'managementpass', displayName: 'Rocanti', role: 'Management', level: 3, email: '', birthday: '2000-05-06' },
@@ -50,7 +51,20 @@ const defaultState = {
     { username: 'ActualCheddar', password: 'devpass', displayName: 'ActualCheddar', role: 'Developer', level: 2, email: '', birthday: '2000-01-22' }
   ],
   staffProfiles: {},
-  staffNotes: {}
+  staffNotes: {},
+  playerNotes: {},
+  banApprovals: {},
+  siteSettings: {
+    announcement: '',
+    siteOnline: true,
+    allowLogins: true,
+    allowSignups: true,
+    allowPostCreation: true,
+    allowTrades: true,
+    allowReports: true,
+    allowPasswordReset: true,
+    disabledFeatures: []
+  }
 };
 
 function normalizeState(parsed) {
@@ -61,7 +75,11 @@ function normalizeState(parsed) {
     bans: Array.isArray(parsed.bans) ? parsed.bans : [],
     staffAccounts: Array.isArray(parsed.staffAccounts) && parsed.staffAccounts.length ? parsed.staffAccounts : defaultState.staffAccounts,
     staffProfiles: parsed.staffProfiles && typeof parsed.staffProfiles === 'object' ? parsed.staffProfiles : {},
-    staffNotes: parsed.staffNotes && typeof parsed.staffNotes === 'object' ? parsed.staffNotes : {}
+    staffNotes: parsed.staffNotes && typeof parsed.staffNotes === 'object' ? parsed.staffNotes : {},
+    playerNotes: parsed.playerNotes && typeof parsed.playerNotes === 'object' ? parsed.playerNotes : {},
+    banApprovals: parsed.banApprovals && typeof parsed.banApprovals === 'object' ? parsed.banApprovals : {},
+    leaveRequests: Array.isArray(parsed.leaveRequests) ? parsed.leaveRequests : [],
+    siteSettings: parsed.siteSettings && typeof parsed.siteSettings === 'object' ? { ...defaultState.siteSettings, ...parsed.siteSettings } : defaultState.siteSettings
   };
 }
 
@@ -159,6 +177,49 @@ function writeStore(state) {
   }
 }
 
+// Helper function to generate random password
+function generateRandomPassword(length = 12) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+}
+
+// Helper function to check if staff member has management level or above
+function isManagementOrAbove(levelOrRole) {
+  const level = typeof levelOrRole === 'number' ? levelOrRole : 0;
+  return level >= 3;
+}
+
+// Helper function to check if staff member is senior or above
+function isSeniorOrAbove(levelOrRole) {
+  const level = typeof levelOrRole === 'number' ? levelOrRole : 0;
+  return level >= 2;
+}
+
+// Helper function to convert role name to level
+function getRoleLevel(role) {
+  const roleMap = {
+    'Developer': 2,
+    'Senior Developer': 2,
+    'Management': 3,
+    'Owner': 4
+  };
+  return roleMap[role] || 0;
+}
+
+// Helper to check if issuer can manage target
+function canManageRole(issuerLevel, targetLevel) {
+  // Only management (3) and above can manage others
+  if (issuerLevel < 3) {
+    return false;
+  }
+  // Can only manage roles strictly below their level
+  return issuerLevel > targetLevel;
+}
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -171,6 +232,14 @@ app.use((req, res, next) => {
 
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(__dirname));
+
+app.get('/staff', (req, res) => {
+  res.sendFile(path.join(__dirname, 'staff.html'));
+});
+
+app.get('/staff.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'staff.html'));
+});
 
 app.get('/api/health', (req, res) => {
   res.json({ ok: true, service: 'waypoint-api', storage: mongoCollection ? 'mongodb' : 'local-file (not persistent on Render free tier)' });
@@ -254,10 +323,103 @@ app.get('/api/staff/profiles', (req, res) => {
   res.json({ profiles: store.staffProfiles || {} });
 });
 
+app.get('/api/staff/loa', (req, res) => {
+  const store = readStore();
+  res.json({ requests: Array.isArray(store.leaveRequests) ? store.leaveRequests : [] });
+});
+
+app.post('/api/staff/loa', (req, res) => {
+  const { username, displayName, reason, startDate, endDate, issuedBy, status } = req.body || {};
+  if (!username || !reason || !startDate || !endDate) {
+    return res.status(400).json({ error: 'username, reason, startDate, and endDate are required' });
+  }
+
+  const store = readStore();
+  const request = {
+    id: `loa-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    username,
+    displayName: displayName || username,
+    reason,
+    startDate,
+    endDate,
+    requestedBy: issuedBy || username,
+    status: status || 'Pending',
+    createdAt: new Date().toISOString(),
+    reviewedBy: '',
+    reviewedAt: '',
+    reviewNote: ''
+  };
+
+  store.leaveRequests = [request, ...(Array.isArray(store.leaveRequests) ? store.leaveRequests : [])];
+  writeStore(store);
+  res.status(201).json({ message: 'Leave request submitted', request });
+});
+
+app.put('/api/staff/loa/:id', (req, res) => {
+  const { id } = req.params;
+  const { status, reviewedBy, reviewNote, reviewerLevel } = req.body || {};
+
+  if (!status || !reviewedBy) {
+    return res.status(400).json({ error: 'status and reviewedBy are required' });
+  }
+
+  if (Number(reviewerLevel) < 3) {
+    return res.status(403).json({ error: 'Only management and above can review LOA requests' });
+  }
+
+  const store = readStore();
+  const request = (store.leaveRequests || []).find(item => item.id === id);
+  if (!request) {
+    return res.status(404).json({ error: 'Leave request not found' });
+  }
+
+  request.status = status;
+  request.reviewedBy = reviewedBy;
+  request.reviewedAt = new Date().toISOString();
+  request.reviewNote = reviewNote || '';
+
+  if (status === 'Approved') {
+    const staffProfile = store.staffProfiles[request.username.toLowerCase()] || {};
+    store.staffProfiles[request.username.toLowerCase()] = { ...staffProfile, status: 'Leave of Absence' };
+    const account = store.staffAccounts.find(item => item.username.toLowerCase() === request.username.toLowerCase());
+    if (account) {
+      account.status = 'Leave of Absence';
+    }
+  } else if (status === 'Denied') {
+    const staffProfile = store.staffProfiles[request.username.toLowerCase()] || {};
+    store.staffProfiles[request.username.toLowerCase()] = { ...staffProfile, status: 'Active' };
+    const account = store.staffAccounts.find(item => item.username.toLowerCase() === request.username.toLowerCase());
+    if (account) {
+      account.status = 'Active';
+    }
+  }
+
+  writeStore(store);
+  res.json({ message: 'Leave request updated', request });
+});
+
+app.get('/api/staff/loa/history/:username', (req, res) => {
+  const { username } = req.params;
+  const store = readStore();
+  const filtered = (store.leaveRequests || []).filter(item => item.username.toLowerCase() === username.toLowerCase());
+  res.json({ requests: filtered });
+});
+
 app.post('/api/staff/accounts', (req, res) => {
-  const { username, password, displayName, role, level, email, birthday } = req.body || {};
-  if (!username || !password || !role) {
-    return res.status(400).json({ error: 'username, password, and role are required' });
+  const { username, password, displayName, role, level, email, birthday, issuedBy, issuerLevel } = req.body || {};
+  if (!username || !role) {
+    return res.status(400).json({ error: 'username and role are required' });
+  }
+
+  // Only management and above can create staff accounts
+  if (!isManagementOrAbove(issuerLevel)) {
+    return res.status(403).json({ error: 'Only management and above can create staff accounts' });
+  }
+
+  // Can't create accounts at or above your own level
+  const newAccountLevel = Number(level) || getRoleLevel(role) || 3;
+  if (newAccountLevel >= issuerLevel) {
+    return res.status(403).json({ error: 'Cannot create accounts at or above your own level' });
   }
 
   const store = readStore();
@@ -266,18 +428,27 @@ app.post('/api/staff/accounts', (req, res) => {
     return res.status(409).json({ error: 'Staff username already exists' });
   }
 
+  // Auto-generate password if not provided
+  const generatedPassword = password || generateRandomPassword();
+  
   const account = {
     username,
-    password,
+    password: generatedPassword,
     displayName: displayName || username,
     role,
-    level: Number(level) || 3,
+    level: newAccountLevel,
     email: email || '',
     birthday: birthday || ''
   };
   store.staffAccounts.push(account);
   writeStore(store);
-  res.status(201).json({ message: 'Staff account created', account });
+  
+  // Return password to client in response for LMS message
+  res.status(201).json({ 
+    message: 'Staff account created', 
+    account: { ...account }, 
+    generatedPassword 
+  });
 });
 
 app.delete('/api/staff/accounts/:username', (req, res) => {
@@ -298,7 +469,8 @@ app.delete('/api/staff/accounts/:username', (req, res) => {
 
 app.put('/api/staff/accounts/:username', (req, res) => {
   const { username } = req.params;
-  const { role, password, email, birthday, status } = req.body || {};
+  const { role, password, email, birthday, status, issuedBy, issuerLevel } = req.body || {};
+  
   const store = readStore();
   const index = store.staffAccounts.findIndex(account => account.username.toLowerCase() === username.toLowerCase());
 
@@ -307,7 +479,27 @@ app.put('/api/staff/accounts/:username', (req, res) => {
   }
 
   const account = store.staffAccounts[index];
-  if (role !== undefined) account.role = role;
+  
+  // Only management and above can update staff accounts
+  if (!isManagementOrAbove(issuerLevel)) {
+    return res.status(403).json({ error: 'Only management and above can update staff accounts' });
+  }
+
+  // Can't modify accounts at or above your own level
+  if (account.level >= issuerLevel) {
+    return res.status(403).json({ error: 'Cannot modify accounts at or above your own level' });
+  }
+
+  // If trying to change role, validate the new role isn't at or above issuer level
+  if (role !== undefined) {
+    const newRoleLevel = getRoleLevel(role);
+    if (newRoleLevel >= issuerLevel) {
+      return res.status(403).json({ error: 'Cannot assign roles at or above your own level' });
+    }
+    account.role = role;
+    account.level = newRoleLevel;
+  }
+
   if (password !== undefined) account.password = password;
   if (email !== undefined) account.email = email;
   if (birthday !== undefined) account.birthday = birthday;
@@ -449,6 +641,132 @@ app.post('/api/staff/notes', (req, res) => {
   store.staffNotes[key].unshift({ note, issuedBy, date: new Date().toLocaleString() });
   writeStore(store);
   res.json({ message: 'Note added', notes: store.staffNotes[key] });
+});
+
+// Player notes (separate from staff notes - for recording info about players)
+app.get('/api/player/notes/:username', (req, res) => {
+  const { username } = req.params;
+  const store = readStore();
+  const key = username.toLowerCase();
+  res.json({ notes: store.playerNotes[key] || [] });
+});
+
+app.post('/api/player/notes', (req, res) => {
+  const { username, note, issuedBy, issuerLevel } = req.body || {};
+  if (!username || !note || !issuedBy) {
+    return res.status(400).json({ error: 'username, note, and issuedBy are required' });
+  }
+
+  // Only senior staff and above can add notes
+  if (!isSeniorOrAbove(issuerLevel)) {
+    return res.status(403).json({ error: 'Only senior staff and above can add player notes' });
+  }
+
+  const store = readStore();
+  const key = username.toLowerCase();
+  store.playerNotes[key] = store.playerNotes[key] || [];
+  store.playerNotes[key].unshift({ note, issuedBy, date: new Date().toLocaleString() });
+  writeStore(store);
+  res.json({ message: 'Player note added', notes: store.playerNotes[key] });
+});
+
+// Reset another staff member's password (management only)
+app.put('/api/staff/reset-password', (req, res) => {
+  const { targetUsername, issuedBy, issuerLevel } = req.body || {};
+  if (!targetUsername || !issuedBy) {
+    return res.status(400).json({ error: 'targetUsername and issuedBy are required' });
+  }
+
+  // Only management and above can reset passwords
+  if (!isManagementOrAbove(issuerLevel)) {
+    return res.status(403).json({ error: 'Only management and above can reset passwords' });
+  }
+
+  const store = readStore();
+  const index = store.staffAccounts.findIndex(account => account.username.toLowerCase() === targetUsername.toLowerCase());
+
+  if (index === -1) {
+    return res.status(404).json({ error: 'Staff account not found' });
+  }
+
+  const newPassword = generateRandomPassword();
+  store.staffAccounts[index].password = newPassword;
+  writeStore(store);
+  res.json({ 
+    message: 'Password reset', 
+    account: store.staffAccounts[index],
+    newPassword,
+    resetBy: issuedBy
+  });
+});
+
+// Ban approval system (for bans over 7 days requiring senior approval)
+app.put('/api/bans/:id/approval', (req, res) => {
+  const { id } = req.params;
+  const { approved, approvedBy, approverLevel } = req.body || {};
+  
+  if (approved === undefined || !approvedBy) {
+    return res.status(400).json({ error: 'approved and approvedBy are required' });
+  }
+
+  // Only senior staff and above can approve bans
+  if (!isSeniorOrAbove(approverLevel)) {
+    return res.status(403).json({ error: 'Only senior staff and above can approve bans' });
+  }
+
+  const store = readStore();
+  const ban = store.bans.find(b => b.id === id);
+
+  if (!ban) {
+    return res.status(404).json({ error: 'Ban not found' });
+  }
+
+  // Check if ban is over 7 days old
+  const banDate = new Date(ban.createdAt);
+  const now = new Date();
+  const daysOld = (now - banDate) / (1000 * 60 * 60 * 24);
+
+  if (daysOld < 7) {
+    return res.status(400).json({ error: 'Only bans older than 7 days require approval' });
+  }
+
+  const key = id;
+  store.banApprovals[key] = {
+    banId: id,
+    approved,
+    approvedBy,
+    approvalDate: new Date().toLocaleString()
+  };
+  writeStore(store);
+  res.json({ message: 'Ban approval recorded', approval: store.banApprovals[key] });
+});
+
+// Site settings (for seniors/management)
+app.get('/api/settings', (req, res) => {
+  const store = readStore();
+  res.json({ settings: store.siteSettings });
+});
+
+app.put('/api/settings', (req, res) => {
+  const { announcement, siteOnline, allowLogins, allowSignups, allowPostCreation, allowTrades, allowReports, allowPasswordReset, issuerLevel } = req.body || {};
+  
+  // Only senior staff and above can change settings
+  if (!isSeniorOrAbove(issuerLevel)) {
+    return res.status(403).json({ error: 'Only senior staff and above can modify site settings' });
+  }
+
+  const store = readStore();
+  if (announcement !== undefined) store.siteSettings.announcement = announcement;
+  if (siteOnline !== undefined) store.siteSettings.siteOnline = siteOnline;
+  if (allowLogins !== undefined) store.siteSettings.allowLogins = allowLogins;
+  if (allowSignups !== undefined) store.siteSettings.allowSignups = allowSignups;
+  if (allowPostCreation !== undefined) store.siteSettings.allowPostCreation = allowPostCreation;
+  if (allowTrades !== undefined) store.siteSettings.allowTrades = allowTrades;
+  if (allowReports !== undefined) store.siteSettings.allowReports = allowReports;
+  if (allowPasswordReset !== undefined) store.siteSettings.allowPasswordReset = allowPasswordReset;
+
+  writeStore(store);
+  res.json({ message: 'Settings updated', settings: store.siteSettings });
 });
 
 // NOTE: previously this was `app.get('*', ...)` sending index.html for ANY

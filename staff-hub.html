@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Waypoint Staff Hub</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .staff-hub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      margin-top: 32px;
+    }
+
+    .staff-hub-card {
+      background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(167, 139, 250, 0.1) 100%);
+      border: 2px solid rgba(79, 172, 254, 0.3);
+      border-radius: 12px;
+      padding: 32px 24px;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .staff-hub-card:hover {
+      border-color: rgba(79, 172, 254, 0.6);
+      background: linear-gradient(135deg, rgba(79, 172, 254, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .staff-hub-icon {
+      font-size: 48px;
+      line-height: 1;
+    }
+
+    .staff-hub-card h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0;
+      color: #fff;
+    }
+
+    .staff-hub-card p {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .staff-hub-restricted {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .staff-hub-restricted::after {
+      content: '🔒';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+    }
+
+    .management-only-badge {
+      display: inline-block;
+      background: #f59e0b;
+      color: #1f2937;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: auto;
+    }
+
+    .senior-only-badge {
+      display: inline-block;
+      background: #10b981;
+      color: #1f2937;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body class="staff-page">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="/index.html">Waypoint</a>
+      <nav class="nav-links">
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
+      </nav>
+      <div class="header-actions">
+        <span id="staffStatusText" class="staff-status-text"></span>
+        <button id="staffLogoutBtn" class="btn btn-secondary header-cta" type="button">Logout</button>
+        <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-header">
+      <div class="container">
+        <p class="eyebrow">Staff Management</p>
+        <h1>Waypoint Staff Hub</h1>
+        <p>Access moderation tools, player management, and staff administration from this central dashboard.</p>
+      </div>
+    </section>
+
+    <section class="staff-dashboard-section">
+      <div class="container">
+        <div id="staffHubContent" style="display:none;">
+          <div class="staff-dashboard-hero">
+            <div class="staff-hero-copy">
+              <p class="eyebrow">Welcome</p>
+              <h2 id="staffHubGreeting">Welcome to Staff Hub</h2>
+              <p id="staffHubSubtitle" class="staff-dashboard-subtitle">Quick access to all your moderation and management tools.</p>
+            </div>
+            <div class="staff-dashboard-hero-actions">
+              <div class="staff-live-clock" aria-live="polite">
+                <span id="staffHubDateText" class="staff-clock-date">Loading date…</span>
+                <strong id="staffHubTimeText" class="staff-clock-time">00:00</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="staff-dashboard-meta">
+            <div class="staff-badge-row">
+              <span id="staffHubUserBadge" class="staff-badge"></span>
+              <span id="staffHubRoleBadge" class="staff-badge"></span>
+            </div>
+          </div>
+
+          <div class="staff-hub-grid">
+            <!-- Player Lookup -->
+            <a href="/staff-player-lookup.html" class="staff-hub-card">
+              <div class="staff-hub-icon">🔍</div>
+              <h3>Player Lookup</h3>
+              <p>Search and view player records, warnings, and bans</p>
+            </a>
+
+            <!-- Warnings -->
+            <a href="/staff-warnings.html" class="staff-hub-card">
+              <div class="staff-hub-icon">⚠️</div>
+              <h3>Issue Warning</h3>
+              <p>Create and manage player warnings</p>
+            </a>
+
+            <!-- Bans -->
+            <a href="/staff-bans.html" class="staff-hub-card">
+              <div class="staff-hub-icon">🚫</div>
+              <h3>Ban Management</h3>
+              <p>Create, review, and manage player bans</p>
+            </a>
+
+            <!-- Staff Management (Management only) -->
+            <a id="staffMembersLink" href="/staff-members.html" class="staff-hub-card" style="display:none;">
+              <div class="staff-hub-icon">👨‍💼</div>
+              <h3>Staff Members</h3>
+              <p>Manage staff accounts and permissions</p>
+              <span class="management-only-badge">Management+</span>
+            </a>
+
+            <!-- Site Settings (Senior only) -->
+            <a id="siteSettingsLink" href="/staff-settings.html" class="staff-hub-card" style="display:none;">
+              <div class="staff-hub-icon">⚙️</div>
+              <h3>Site Settings</h3>
+              <p>Configure site features and settings</p>
+              <span class="senior-only-badge">Senior+</span>
+            </a>
+
+            <!-- Leave Requests (Management only) -->
+            <a id="staffLOALink" href="/staff-loa.html" class="staff-hub-card" style="display:none;">
+              <div class="staff-hub-icon">🗓️</div>
+              <h3>LOA Requests</h3>
+              <p>Review and approve staff leave requests</p>
+              <span class="management-only-badge">Management+</span>
+            </a>
+          </div>
+        </div>
+
+        <div id="staffHubLoginPrompt" class="response-box staff-login-prompt">
+          <p>You are not logged in. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login to access the Staff Hub</a>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // Simple session check
+    const staffSession = JSON.parse(localStorage.getItem('waypointStaffSession') || 'null');
+    const staffHubContent = document.getElementById('staffHubContent');
+    const staffHubLoginPrompt = document.getElementById('staffHubLoginPrompt');
+    const staffLogoutBtn = document.getElementById('staffLogoutBtn');
+    const staffStatusText = document.getElementById('staffStatusText');
+    const staffHubGreeting = document.getElementById('staffHubGreeting');
+    const staffHubSubtitle = document.getElementById('staffHubSubtitle');
+    const staffHubUserBadge = document.getElementById('staffHubUserBadge');
+    const staffHubRoleBadge = document.getElementById('staffHubRoleBadge');
+    const staffMembersLink = document.getElementById('staffMembersLink');
+    const siteSettingsLink = document.getElementById('siteSettingsLink');
+    const staffLOALink = document.getElementById('staffLOALink');
+    const staffHubDateText = document.getElementById('staffHubDateText');
+    const staffHubTimeText = document.getElementById('staffHubTimeText');
+
+    if (staffSession && staffSession.username) {
+      staffHubContent.style.display = 'block';
+      staffHubLoginPrompt.style.display = 'none';
+      staffStatusText.textContent = `Logged in as ${staffSession.username}`;
+      staffHubGreeting.textContent = `Welcome, ${staffSession.displayName}!`;
+      staffHubUserBadge.textContent = `👤 ${staffSession.username}`;
+      staffHubRoleBadge.textContent = `📋 ${staffSession.role}`;
+
+      // Show LOA to all staff members; management review is still restricted to management+
+      staffLOALink.style.display = 'block';
+
+      // Show management-only links
+      if (staffSession.level >= 3) {
+        staffMembersLink.style.display = 'block';
+      }
+
+      // Show senior-only links
+      if (staffSession.level >= 2) {
+        siteSettingsLink.style.display = 'block';
+      }
+
+      // Update time
+      function updateTime() {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        staffHubDateText.textContent = dateStr;
+        staffHubTimeText.textContent = timeStr;
+      }
+      updateTime();
+      setInterval(updateTime, 1000);
+    } else {
+      staffHubContent.style.display = 'none';
+      staffHubLoginPrompt.style.display = 'block';
+    }
+
+    staffLogoutBtn.addEventListener('click', () => {
+      localStorage.removeItem('waypointStaffSession');
+      window.location.href = '/index.html';
+    });
+  </script>
+</body>
+</html>

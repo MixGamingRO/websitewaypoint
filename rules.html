@@ -4,26 +4,60 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Waypoint Game Rules</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="index.html">Waypoint</a>
+      <a class="brand" href="/index.html">Waypoint</a>
       <nav class="nav-links">
-        <a href="index.html">🏠 Home</a>
-        <a href="team.html">👥 Team</a>
-        <a href="rules.html">📜 Game Rules</a>
-        <a href="faq.html">❓ FAQ</a>
-        <a href="contact.html">✉️ Contact</a>
-        <a href="careers.html">💼 Careers</a>
+        <a href="/index.html">🏠 Home</a>
+        <a href="/team.html">👥 Team</a>
+        <a href="/rules.html">📜 Game Rules</a>
+        <a href="/faq.html">❓ FAQ</a>
+        <a href="/contact.html">✉️ Contact</a>
+        <a href="/careers.html">💼 Careers</a>
       </nav>
       <div class="header-actions">
+        <span id="staffStatusText" class="staff-status-text"></span>
+        <button id="staffPanelBtn" class="btn btn-secondary header-cta" type="button" style="display:none;">Staff Panel</button>
         <button id="staffLoginBtn" class="btn btn-secondary header-cta" type="button">Staff Login</button>
         <a class="btn btn-link header-cta" href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a>
       </div>
     </div>
   </header>
+
+  <div id="staffLoginModal" class="staff-login-modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-card-top">
+        <div>
+          <p class="eyebrow">Staff Access</p>
+          <h2>Staff Login</h2>
+          <p class="modal-hero-copy">Authorized staff only. Unauthorised access is prohibited and may be treated as a security violation.</p>
+        </div>
+        <button id="staffModalClose" class="modal-close" type="button">✕</button>
+      </div>
+      <div class="login-grid">
+        <div class="login-banner">
+          <img src="/images/banner.png" alt="Waypoint login banner" />
+          <div class="login-banner-copy">
+            <p>Waypoint Control Room</p>
+          </div>
+        </div>
+        <form id="staffLoginForm" class="login-form">
+          <label for="staffUsername">Username</label>
+          <input id="staffUsername" name="staffUsername" type="text" required placeholder="Staff username" />
+          <label for="staffPassword">Password</label>
+          <div class="password-input-row">
+            <input id="staffPassword" name="staffPassword" type="password" required placeholder="Password" />
+            <button id="passwordVisibilityToggle" type="button" class="password-toggle" aria-label="Show password">Show</button>
+          </div>
+          <button class="btn btn-primary login-submit" type="submit">Login</button>
+        </form>
+      </div>
+      <div id="staffLoginMessage" class="response-box" style="display:none;margin-top:16px;"></div>
+    </div>
+  </div>
 
   <main>
     <section class="page-header rules-header">
@@ -95,5 +129,7 @@
       <p><a href="https://www.discord.gg/G2m72gNGWa" target="_blank" rel="noreferrer noopener">Discord</a></p>
     </div>
   </footer>
+
+  <script src="/script.js"></script>
 </body>
 </html>

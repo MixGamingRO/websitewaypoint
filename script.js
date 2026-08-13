@@ -90,8 +90,6 @@ const staffAccounts = [
   { username: 'Rocanti', password: 'managementpass', displayName: 'Rocanti', role: 'Management', level: 3, email: '', birthday: '2000-05-06' },
   { username: 'Chowlty', password: 'managementpass', displayName: 'Chowlty', role: 'Management', level: 3, email: '', birthday: '2000-07-28' },
   { username: 'MixBoss28', password: 'managementpass', displayName: 'MixBoss28', role: 'Management', level: 3, email: '', birthday: '2000-08-12' },
-  { username: 'xDeveloper_Jacobx', password: 'managementpass', displayName: 'xDeveloper_Jacobx', role: 'Management', level: 3, email: '', birthday: '2000-06-10' },
-  { username: 'Vivacion', password: 'devpass', displayName: 'Vivacion', role: 'Senior Developer', level: 2, email: '', birthday: '2000-04-22' },
   { username: 'Seby17119', password: 'devpass', displayName: 'Seby17119', role: 'Developer', level: 2, email: '', birthday: '2000-11-02' },
   { username: 'ActualCheddar', password: 'devpass', displayName: 'ActualCheddar', role: 'Developer', level: 2, email: '', birthday: '2000-01-22' },
 ];
@@ -100,9 +98,13 @@ const roleColorMap = {
   Owner: '#5c60d6',
   'Senior Management': '#5c60d6',
   Management: '#7c3aed',
-  'Senior Developer': '#dc2525',
   Developer: '#dc2525',
 };
+
+// Roblox userIds resolved live by username for staff accounts that aren't
+// part of the hardcoded staffMembers list above (e.g. accounts created later
+// via the Create Staff Account panel). Keyed by lowercase username.
+let robloxIdCache = {};
 
 const DEFAULT_SUPPORT_EMAIL = 'mixci1000@gmail.com';
 const DEFAULT_STAFF_SENDER_EMAIL = 'mixci10000@gmail.com';
@@ -227,26 +229,6 @@ const staffMembers = [
     bio: 'Management staff keeping Waypoint on track.',
   },
   {
-    username: 'xDeveloper_Jacobx',
-    userId: null,
-    localImage: 'jacob.png',
-    name: 'xDeveloper_Jacobx',
-    category: 'Management',
-    role: 'Management',
-    title: 'Management',
-    bio: 'Management team member driving Waypoint forward.',
-  },
-  {
-    username: 'Vivacion',
-    userId: null,
-    localImage: 'Vivacion.png',
-    name: 'Vivacion',
-    category: 'Developer',
-    role: 'Senior Developer',
-    title: 'Senior Developer',
-    bio: 'Senior developer leading technical initiatives.',
-  },
-  {
     username: 'Seby17119',
     userId: null,
     localImage: 'Seby.png',
@@ -319,13 +301,12 @@ function getActiveStaffDirectory() {
       const profile = profiles[account.username.toLowerCase()] || {};
       const existing = staffMembers.find(member => member.username.toLowerCase() === account.username.toLowerCase());
       const role = account.role || 'Management';
-      const category = role === 'Owner' ? 'Owner' : (role === 'Developer' || role === 'Senior Developer') ? 'Developer' : role;
       return {
         username: account.username,
-        userId: existing?.userId ?? null,
+        userId: existing?.userId ?? robloxIdCache[account.username.toLowerCase()] ?? null,
         localImage: existing?.localImage ?? null,
         name: account.displayName || account.username,
-        category: category,
+        category: role === 'Owner' ? 'Owner' : role === 'Developer' ? 'Developer' : role,
         role,
         title: role,
         bio: existing?.bio || `${role} team member.`
@@ -1160,6 +1141,8 @@ function setupStaffEventHandlers() {
           })
         });
         await refreshServerStaffAccounts();
+        renderTeamCategories();
+        refreshRobloxUsernames();
         showResponse(staffDashboardMessage, `New staff account created for ${username}.`);
         if (newStaffUsername) newStaffUsername.value = '';
         if (newStaffPassword) newStaffPassword.value = '';
@@ -1262,7 +1245,8 @@ function setupStaffEventHandlers() {
 
 async function refreshRobloxUsernames() {
   if (!teamCategories) return;
-  const usernames = staffMembers.map(member => member.username);
+  const usernames = getActiveStaffDirectory().map(member => member.username);
+  if (!usernames.length) return;
   const url = 'https://users.roblox.com/v1/usernames/users';
 
   try {
@@ -1276,9 +1260,11 @@ async function refreshRobloxUsernames() {
     const data = await response.json();
     if (!data.data) throw new Error('Roblox API returned invalid data');
 
-    const nameMap = Object.fromEntries(data.data.map(user => [user.requestedUsername.toLowerCase(), user.id]));
+    data.data.forEach(user => {
+      robloxIdCache[user.requestedUsername.toLowerCase()] = user.id;
+    });
     staffMembers.forEach(member => {
-      const id = nameMap[member.username.toLowerCase()];
+      const id = robloxIdCache[member.username.toLowerCase()];
       if (id) member.userId = id;
     });
 

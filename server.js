@@ -7,6 +7,35 @@ const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'store.json');
 
+// ---------------------------------------------------------------------------
+// PERSISTENCE
+//
+// IMPORTANT: Render's Free web services have an EPHEMERAL filesystem. Any
+// file this process writes (like data/store.json) is wiped every time the
+// service redeploys, restarts, or spins down from inactivity. That is why
+// passwords / emails / bans / deactivations were reverting to the hardcoded
+// defaults below - the file kept getting recreated from `defaultState`.
+//
+// Fix: if a MONGODB_URI environment variable is set, all reads/writes go to
+// a MongoDB collection instead, which survives restarts and redeploys. If no
+// MONGODB_URI is set, we fall back to the local JSON file so local
+// development still works, but we log a loud warning because that mode will
+// NOT survive a Render restart.
+//
+// To make this permanent on Render (free):
+//   1. Create a free MongoDB Atlas cluster (mongodb.com/cloud/atlas) - no
+//      credit card required, 512MB free forever.
+//   2. Grab the connection string (Database Access -> connect -> Node.js).
+//   3. In the Render dashboard, add an environment variable MONGODB_URI with
+//      that connection string to this service.
+//   4. Redeploy. From then on all data (accounts, tickets, warnings, bans,
+//      staff status/email/birthday) persists across restarts.
+// ---------------------------------------------------------------------------
+
+const MONGODB_URI = process.env.MONGODB_URI || '';
+const MONGODB_DB = process.env.MONGODB_DB || 'waypoint';
+let mongoCollection = null;
+
 const defaultState = {
   tickets: [],
   warnings: [],
@@ -24,41 +53,112 @@ const defaultState = {
   ticketCounter: 0
 };
 
-function ensureStorage() {
+function normalizeState(parsed) {
+  return {
+    ...defaultState,
+    ...parsed,
+    tickets: Array.isArray(parsed.tickets) ? parsed.tickets : [],
+    warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
+    bans: Array.isArray(parsed.bans) ? parsed.bans : [],
+    staffAccounts: Array.isArray(parsed.staffAccounts) && parsed.staffAccounts.length ? parsed.staffAccounts : defaultState.staffAccounts,
+    staffProfiles: parsed.staffProfiles && typeof parsed.staffProfiles === 'object' ? parsed.staffProfiles : {},
+    staffNotes: parsed.staffNotes && typeof parsed.staffNotes === 'object' ? parsed.staffNotes : {},
+    ticketCounter: Number(parsed.ticketCounter) || 0
+  };
+}
+
+// In-memory cache. Every route reads/writes this synchronously (unchanged
+// from before), and writeStore() below fans the change out to whichever
+// backend is active.
+let storeCache = null;
+
+function ensureLocalFile() {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
-
   if (!fs.existsSync(DATA_FILE)) {
     fs.writeFileSync(DATA_FILE, JSON.stringify(defaultState, null, 2));
   }
 }
 
-function readStore() {
-  ensureStorage();
-  const raw = fs.readFileSync(DATA_FILE, 'utf8');
+function loadFromFileSync() {
+  ensureLocalFile();
   try {
-    const parsed = JSON.parse(raw);
-    return {
-      ...defaultState,
-      ...parsed,
-      tickets: Array.isArray(parsed.tickets) ? parsed.tickets : [],
-      warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
-      bans: Array.isArray(parsed.bans) ? parsed.bans : [],
-      staffAccounts: Array.isArray(parsed.staffAccounts) && parsed.staffAccounts.length ? parsed.staffAccounts : defaultState.staffAccounts,
-      staffProfiles: parsed.staffProfiles && typeof parsed.staffProfiles === 'object' ? parsed.staffProfiles : {},
-      staffNotes: parsed.staffNotes && typeof parsed.staffNotes === 'object' ? parsed.staffNotes : {},
-      ticketCounter: Number(parsed.ticketCounter) || 0
-    };
+    const raw = fs.readFileSync(DATA_FILE, 'utf8');
+    return normalizeState(JSON.parse(raw));
   } catch (error) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(defaultState, null, 2));
-    return { ...defaultState };
+    const fresh = { ...defaultState };
+    fs.writeFileSync(DATA_FILE, JSON.stringify(fresh, null, 2));
+    return fresh;
   }
 }
 
-function writeStore(state) {
-  ensureStorage();
+function persistToFileSync(state) {
+  ensureLocalFile();
   fs.writeFileSync(DATA_FILE, JSON.stringify(state, null, 2));
+}
+
+async function initStorage() {
+  if (MONGODB_URI) {
+    try {
+      // Lazily require so a missing dependency doesn't crash apps that
+      // don't use Mongo. Run `npm install` after pulling these changes so
+      // the `mongodb` package (added to package.json) is available.
+      const { MongoClient } = require('mongodb');
+      const client = new MongoClient(MONGODB_URI, { serverSelectionTimeoutMS: 8000 });
+      await client.connect();
+      const db = client.db(MONGODB_DB);
+      mongoCollection = db.collection('store');
+
+      const existing = await mongoCollection.findOne({ _id: 'singleton' });
+      if (existing) {
+        const { _id, ...rest } = existing;
+        storeCache = normalizeState(rest);
+      } else {
+        storeCache = { ...defaultState };
+        await mongoCollection.updateOne(
+          { _id: 'singleton' },
+          { $set: storeCache },
+          { upsert: true }
+        );
+      }
+      console.log('[storage] Connected to MongoDB - data will persist across restarts and deploys.');
+    } catch (error) {
+      console.error('[storage] MONGODB_URI was set but connection failed. Falling back to the local file, which will NOT persist on Render free tier. Error:', error.message);
+      mongoCollection = null;
+      storeCache = loadFromFileSync();
+    }
+  } else {
+    console.warn('[storage] No MONGODB_URI set. Using the local JSON file for storage.');
+    console.warn('[storage] On Render (and most hosts), this file is wiped on every restart/redeploy/spin-down.');
+    console.warn('[storage] Set a MONGODB_URI environment variable to make data persist. See comments at the top of server.js.');
+    storeCache = loadFromFileSync();
+  }
+}
+
+function readStore() {
+  // Return the live in-memory object; callers mutate it directly and then
+  // call writeStore(), matching the previous file-based API.
+  return storeCache;
+}
+
+function writeStore(state) {
+  storeCache = state;
+  // Always keep a local copy too (best-effort, synchronous) so a same-process
+  // restart or local dev without Mongo still has the latest data available.
+  try {
+    persistToFileSync(state);
+  } catch (error) {
+    console.error('[storage] Failed to write local backup file:', error.message);
+  }
+
+  if (mongoCollection) {
+    mongoCollection
+      .updateOne({ _id: 'singleton' }, { $set: state }, { upsert: true })
+      .catch(error => {
+        console.error('[storage] Failed to persist to MongoDB:', error.message);
+      });
+  }
 }
 
 app.use((req, res, next) => {
@@ -75,7 +175,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(express.static(__dirname));
 
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, service: 'waypoint-api' });
+  res.json({ ok: true, service: 'waypoint-api', storage: mongoCollection ? 'mongodb' : 'local-file (not persistent on Render free tier)' });
 });
 
 app.get('/api/tickets', (req, res) => {
@@ -91,10 +191,11 @@ app.post('/api/tickets', (req, res) => {
 
   const store = readStore();
   const nextNumber = (Number(store.ticketCounter) || 0) + 1;
+  const ticketId = `WP-${String(nextNumber).padStart(4, '0')}`;
   const ticket = {
-    id: `WP-${String(nextNumber).padStart(4, '0')}`,
+    id: ticketId,
     number: nextNumber,
-    url: `https://podrblx.co.uk/staff/ticket?ID=${nextNumber}`,
+    url: `/team.html?ticket=${encodeURIComponent(ticketId)}`,
     name,
     email,
     subject,
@@ -181,6 +282,11 @@ app.delete('/api/bans/:id', (req, res) => {
 app.get('/api/staff/accounts', (req, res) => {
   const store = readStore();
   res.json({ accounts: store.staffAccounts });
+});
+
+app.get('/api/staff/profiles', (req, res) => {
+  const store = readStore();
+  res.json({ profiles: store.staffProfiles || {} });
 });
 
 app.post('/api/staff/accounts', (req, res) => {
@@ -382,10 +488,26 @@ app.post('/api/staff/notes', (req, res) => {
   res.json({ message: 'Note added', notes: store.staffNotes[key] });
 });
 
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+// NOTE: previously this was `app.get('*', ...)` sending index.html for ANY
+// unmatched route. That meant a stale/incorrect link (like an old
+// /staff/ticket?ID=3 bookmark) silently rendered the homepage markup with
+// broken relative asset paths instead of a real 404 - which is exactly the
+// "unstyled page that isn't the ticket" symptom. Real pages are plain files
+// served by express.static above, so unmatched routes should 404 instead.
+app.use((req, res) => {
+  res.status(404).type('html').send('<h1>404 - Page not found</h1><p><a href="/index.html">Go home</a></p>');
 });
 
-app.listen(PORT, () => {
-  console.log(`Waypoint API running on http://localhost:${PORT}`);
-});
+initStorage()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Waypoint API running on http://localhost:${PORT}`);
+    });
+  })
+  .catch(error => {
+    console.error('Failed to initialize storage, starting anyway with defaults:', error);
+    storeCache = { ...defaultState };
+    app.listen(PORT, () => {
+      console.log(`Waypoint API running on http://localhost:${PORT}`);
+    });
+  });

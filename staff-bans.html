@@ -232,10 +232,24 @@
               </div>
             </div>
           </div>
+
+          <div id="managementBansPanel" style="display:none; margin-top: 32px;">
+            <div class="ban-form-panel">
+              <h3>⚙️ Management: Revoke Bans</h3>
+              <p style="color: rgba(255, 255, 255, 0.6); font-size: 14px; margin-bottom: 16px;">Management level 3+ only. Click Revoke to mark a ban as revoked (moves to history).</p>
+              <div style="margin-bottom: 12px;">
+                <label for="managementBanSearch" style="display:block; margin-bottom:8px; color: rgba(255,255,255,0.8); font-size: 13px;">Search by username</label>
+                <input id="managementBanSearch" type="text" placeholder="Search username..." style="width: 100%; background: rgba(15,23,42,0.7); border: 1px solid rgba(148,163,184,0.35); border-radius: 8px; padding: 10px 12px; color: white; box-sizing: border-box;" />
+              </div>
+              <div id="bansRevocationList" style="display: flex; flex-direction: column; gap: 8px; max-height: 500px; overflow-y: auto;">
+                <p class="staff-panel-note" style="margin: 0;">No bans to revoke.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="banLoginPrompt" class="response-box staff-login-prompt">
-          <p>You are not logged in. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login to access ban management</a>.</p>
+          <p>You are not logged in. Please <a href="/staff-hub.html" style="color: #4fdbfe; text-decoration: underline;">login to access ban management</a>.</p>
         </div>
       </div>
     </section>
@@ -247,14 +261,31 @@
     const banLoginPrompt = document.getElementById('banLoginPrompt');
     const banForm = document.getElementById('banForm');
     const banListContainer = document.getElementById('banListContainer');
+    const managementBanSearch = document.getElementById('managementBanSearch');
+    const managementPanel = document.getElementById('managementBansPanel');
+    const revocationList = document.getElementById('bansRevocationList');
 
-    if (!staffSession || !staffSession.username) {
-      banManagementContent.style.display = 'none';
-      banLoginPrompt.style.display = 'block';
-    } else {
+    if (managementBanSearch) {
+      managementBanSearch.addEventListener('input', (event) => {
+        renderManagementBans(event.target.value.trim());
+      });
+    }
+
+    function isManagementSession() {
+      return !!staffSession && Number(staffSession.level) >= 3;
+    }
+
+    function toggleBanPageState() {
+      if (!staffSession || !staffSession.username) {
+        banManagementContent.style.display = 'none';
+        banLoginPrompt.style.display = 'block';
+        return;
+      }
+
       banManagementContent.style.display = 'block';
       banLoginPrompt.style.display = 'none';
       loadBans();
+      renderManagementBans();
     }
 
     banForm.addEventListener('submit', async (e) => {
@@ -281,6 +312,7 @@
           alert('Ban issued successfully!');
           banForm.reset();
           loadBans();
+          renderManagementBans();
         } else {
           alert('Error issuing ban');
         }
@@ -294,14 +326,15 @@
       try {
         const response = await fetch('/api/bans');
         const data = await response.json();
-        const bans = data.bans || [];
+        const bans = Array.isArray(data.bans) ? data.bans : [];
+        const activeBans = bans.filter(ban => !ban.status || ban.status !== 'revoked');
 
-        if (bans.length === 0) {
-          banListContainer.innerHTML = '<div class="staff-panel-note">No bans on record</div>';
+        if (!activeBans.length) {
+          banListContainer.innerHTML = '<div class="staff-panel-note">No active bans on record</div>';
           return;
         }
 
-        banListContainer.innerHTML = bans.map(ban => {
+        banListContainer.innerHTML = activeBans.map(ban => {
           const banDate = new Date(ban.createdAt);
           const now = new Date();
           const daysOld = Math.floor((now - banDate) / (1000 * 60 * 60 * 24));
@@ -320,19 +353,15 @@
                 ${requiresApproval ? `<span style="color: #fbbf24;"><strong>⚠️ Requires Senior Approval</strong></span>` : ''}
               </div>
               ${ban.evidence ? `<p><strong>Evidence:</strong> <a href="${ban.evidence}" target="_blank" class="ban-evidence-link">View</a></p>` : ''}
-              
               <div class="ban-actions">
-                ${staffSession.level >= 3 ? `
-                  <button class="btn btn-secondary" onclick="revokeBan('${ban.id}')">Revoke Ban</button>
-                ` : ''}
+                ${Number(staffSession.level) >= 3 ? `<button class="btn btn-secondary revoke-ban-btn" data-ban-id="${ban.id}" type="button">Revoke Ban</button>` : ''}
               </div>
-
-              ${requiresApproval && staffSession.level >= 2 ? `
+              ${requiresApproval && Number(staffSession.level) >= 2 ? `
                 <div class="approval-section">
                   <h5>Senior Approval Required</h5>
                   <div class="approval-buttons">
-                    <button class="btn btn-primary" onclick="approveBan('${ban.id}', true)">✓ Approve</button>
-                    <button class="btn btn-secondary" onclick="approveBan('${ban.id}', false)">✗ Reject</button>
+                    <button class="btn btn-primary" type="button" data-approve-ban="${ban.id}" data-approved="true">✓ Approve</button>
+                    <button class="btn btn-secondary" type="button" data-approve-ban="${ban.id}" data-approved="false">✗ Reject</button>
                   </div>
                 </div>
               ` : ''}
@@ -354,15 +383,18 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             issuedBy: staffSession.username,
-            issuerLevel: staffSession.level
+            issuerLevel: Number(staffSession.level)
           })
         });
+
+        const payload = await response.json().catch(() => ({}));
 
         if (response.ok) {
           alert('Ban revoked!');
           loadBans();
+          renderManagementBans();
         } else {
-          alert('Error revoking ban');
+          alert(payload.error || 'Error revoking ban');
         }
       } catch (error) {
         console.error('Error revoking ban:', error);
@@ -378,13 +410,14 @@
           body: JSON.stringify({
             approved,
             approvedBy: staffSession.username,
-            approverLevel: staffSession.level
+            approverLevel: Number(staffSession.level)
           })
         });
 
         if (response.ok) {
           alert(approved ? 'Ban approved!' : 'Ban rejected!');
           loadBans();
+          renderManagementBans();
         } else {
           alert('Error updating approval status');
         }
@@ -394,8 +427,78 @@
       }
     }
 
-    // Refresh bans every 30 seconds
-    setInterval(loadBans, 30000);
+    function renderManagementBans(searchTerm = '') {
+      if (!managementPanel || !revocationList) return;
+
+      const isManagement = isManagementSession();
+      managementPanel.style.display = isManagement ? 'block' : 'none';
+
+      if (!isManagement) {
+        revocationList.innerHTML = '<p class="staff-panel-note" style="margin: 0;">Management only.</p>';
+        return;
+      }
+
+      fetch('/api/bans')
+        .then(response => response.json())
+        .then(data => {
+          const activeBans = (Array.isArray(data.bans) ? data.bans : []).filter(ban => !ban.status || ban.status !== 'revoked');
+          const normalizedSearch = searchTerm.toLowerCase();
+          const filteredBans = normalizedSearch
+            ? activeBans.filter(ban => ban.username && ban.username.toLowerCase().includes(normalizedSearch))
+            : activeBans;
+
+          if (!filteredBans.length) {
+            revocationList.innerHTML = '<p class="staff-panel-note" style="margin: 0;">No bans found for that username.</p>';
+            return;
+          }
+
+          revocationList.innerHTML = filteredBans.map(ban => `
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+              <div style="flex: 1;">
+                <div style="font-weight: 600; color: #fca5a5;">${ban.username}</div>
+                <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin-top: 4px;">${ban.reason} (${ban.duration})</div>
+                <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">By ${ban.issuedBy} • ${ban.createdAt}</div>
+              </div>
+              <button class="mgmt-revoke-ban btn btn-secondary" data-ban-id="${ban.id}" style="white-space: nowrap; font-size: 12px; padding: 6px 12px;" type="button">Revoke</button>
+            </div>
+          `).join('');
+        })
+        .catch(error => {
+          console.error('Error rendering management bans:', error);
+          revocationList.innerHTML = '<p class="staff-panel-note" style="margin: 0;">Unable to load revocation list.</p>';
+        });
+    }
+
+    document.addEventListener('click', async (event) => {
+      const banButton = event.target.closest('.revoke-ban-btn');
+      if (banButton) {
+        const banId = banButton.dataset.banId;
+        await revokeBan(banId);
+        return;
+      }
+
+      const managementBanButton = event.target.closest('.mgmt-revoke-ban');
+      if (managementBanButton) {
+        const banId = managementBanButton.dataset.banId;
+        await revokeBan(banId);
+        return;
+      }
+
+      const approvalButton = event.target.closest('[data-approve-ban]');
+      if (approvalButton) {
+        const banId = approvalButton.dataset.approveBan;
+        const approved = approvalButton.dataset.approved === 'true';
+        await approveBan(banId, approved);
+      }
+    });
+
+    toggleBanPageState();
+    setInterval(() => {
+      if (staffSession && staffSession.username) {
+        loadBans();
+        renderManagementBans();
+      }
+    }, 30000);
   </script>
 </body>
 </html>

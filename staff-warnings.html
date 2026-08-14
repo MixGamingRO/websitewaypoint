@@ -191,10 +191,24 @@
               </div>
             </div>
           </div>
+
+          <div id="managementWarningsPanel" style="display:none; margin-top: 32px;">
+            <div class="warning-form-panel">
+              <h3>⚙️ Management: Remove Warnings</h3>
+              <p style="color: rgba(255, 255, 255, 0.6); font-size: 14px; margin-bottom: 16px;">Management level 3+ only. Click Remove to permanently delete a warning from the system.</p>
+              <div style="margin-bottom: 12px;">
+                <label for="managementWarningSearch" style="display:block; margin-bottom:8px; color: rgba(255,255,255,0.8); font-size: 13px;">Search by username</label>
+                <input id="managementWarningSearch" type="text" placeholder="Search username..." style="width: 100%; background: rgba(15,23,42,0.7); border: 1px solid rgba(148,163,184,0.35); border-radius: 8px; padding: 10px 12px; color: white; box-sizing: border-box;" />
+              </div>
+              <div id="warningsRemovalList" style="display: flex; flex-direction: column; gap: 8px; max-height: 500px; overflow-y: auto;">
+                <p class="staff-panel-note" style="margin: 0;">No warnings to remove.</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="warningLoginPrompt" class="response-box staff-login-prompt">
-          <p>You are not logged in. Please <a href="/staff.html" style="color: #4fdbfe; text-decoration: underline;">login to access warning management</a>.</p>
+          <p>You are not logged in. Please <a href="/staff-hub.html" style="color: #4fdbfe; text-decoration: underline;">login to access warning management</a>.</p>
         </div>
       </div>
     </section>
@@ -206,6 +220,7 @@
     const warningLoginPrompt = document.getElementById('warningLoginPrompt');
     const warningForm = document.getElementById('warningForm');
     const warningListContainer = document.getElementById('warningListContainer');
+    const managementWarningSearch = document.getElementById('managementWarningSearch');
     const filterButtons = {
       all: document.getElementById('filterAll'),
       recent: document.getElementById('filterRecent'),
@@ -215,6 +230,12 @@
     let currentFilter = 'all';
     let allWarnings = [];
 
+    if (managementWarningSearch) {
+      managementWarningSearch.addEventListener('input', (event) => {
+        renderManagementWarnings(event.target.value.trim());
+      });
+    }
+
     if (!staffSession || !staffSession.username) {
       warningManagementContent.style.display = 'none';
       warningLoginPrompt.style.display = 'block';
@@ -222,6 +243,7 @@
       warningManagementContent.style.display = 'block';
       warningLoginPrompt.style.display = 'none';
       loadWarnings();
+      setTimeout(renderManagementWarnings, 100);
     }
 
     // Filter button handlers
@@ -338,8 +360,87 @@
       `).join('');
     }
 
+    function renderManagementWarnings(searchTerm = '') {
+      const isManagement = staffSession && Number(staffSession.level) >= 3;
+      const managementPanel = document.getElementById('managementWarningsPanel');
+      const removalList = document.getElementById('warningsRemovalList');
+      
+      if (!isManagement) {
+        managementPanel.style.display = 'none';
+        return;
+      }
+      
+      managementPanel.style.display = 'block';
+      
+      if (!allWarnings || allWarnings.length === 0) {
+        removalList.innerHTML = '<p class="staff-panel-note" style="margin: 0;">No warnings to remove.</p>';
+        return;
+      }
+
+      const normalizedSearch = searchTerm.toLowerCase();
+      const filteredWarnings = normalizedSearch
+        ? allWarnings.filter(warning => warning.username && warning.username.toLowerCase().includes(normalizedSearch))
+        : allWarnings;
+
+      if (!filteredWarnings.length) {
+        removalList.innerHTML = '<p class="staff-panel-note" style="margin: 0;">No warnings found for that username.</p>';
+        return;
+      }
+
+      removalList.innerHTML = filteredWarnings.map((warning, idx) => `
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+          <div style="flex: 1;">
+            <div style="font-weight: 600; color: #fcd34d;">${warning.username}</div>
+            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin-top: 4px;">${warning.reason}</div>
+            <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">By ${warning.issuedBy} • ${warning.createdAt}</div>
+          </div>
+          <button class="mgmt-remove-warning btn btn-secondary" data-warn-index="${allWarnings.indexOf(warning)}" style="white-space: nowrap; font-size: 12px; padding: 6px 12px;">Remove</button>
+        </div>
+      `).join('');
+
+      removalList.querySelectorAll('.mgmt-remove-warning').forEach(btn => {
+        btn.addEventListener('click', async e => {
+          e.preventDefault();
+          const idx = parseInt(btn.dataset.warnIndex, 10);
+          
+          if (confirm('Remove this warning permanently?')) {
+            try {
+              const response = await fetch('/api/warnings', {
+                method: 'GET'
+              });
+              const data = await response.json();
+              let warnings = data.warnings || [];
+              warnings.splice(idx, 1);
+              
+              localStorage.setItem('waypointWarnings', JSON.stringify(warnings));
+              allWarnings = warnings;
+              renderWarnings(warnings);
+              renderManagementWarnings(managementWarningSearch ? managementWarningSearch.value.trim() : '');
+              
+              alert('Warning removed successfully.');
+              
+              try {
+                await fetch(`/api/warnings/${idx}`, {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ issuerLevel: staffSession.level })
+                });
+              } catch (err) {
+                console.warn('Server sync failed:', err);
+              }
+            } catch (error) {
+              alert('Error removing warning: ' + error.message);
+            }
+          }
+        });
+      });
+    }
+
     // Refresh warnings every 30 seconds
-    setInterval(loadWarnings, 30000);
+    setInterval(() => {
+      loadWarnings();
+      renderManagementWarnings();
+    }, 30000);
   </script>
 </body>
 </html>

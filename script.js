@@ -185,6 +185,7 @@ async function syncFromServer() {
 
     renderWarnings();
     renderBans();
+    updateManagementPanelVisibility();
     populateManageStaffSelect();
   } catch (error) {
     console.warn('Server sync unavailable, using local data only:', error.message);
@@ -555,51 +556,61 @@ function saveBans(bans) {
 function renderWarnings() {
   if (!warningsList) return;
   const warnings = getWarnings();
+  const session = getStaffSession();
+  const isManagement = session && Number(session.level) >= 3;
+  
   if (!warnings.length) {
     warningsList.innerHTML = '<p class="response-box">No warnings have been issued yet.</p>';
-    return;
-  }
+  } else {
+    const recentWarnings = [...warnings]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10);
 
-  const recentWarnings = [...warnings]
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 10);
-
-  warningsList.innerHTML = `
-    <div class="recent-moderation-list">
-      ${recentWarnings
-        .map((warning, index) => {
-          const rank = recentWarnings.length - index;
-          return `
-            <article class="recent-moderation-item warning-item">
-              <div class="moderation-rank">#${rank}</div>
-              <div class="moderation-body">
-                <div class="moderation-topline">
-                  <strong>${warning.username}</strong>
-                  <span>${warning.issuedBy}</span>
+    warningsList.innerHTML = `
+      <div class="recent-moderation-list">
+        ${recentWarnings
+          .map((warning, displayIndex) => {
+            const rank = recentWarnings.length - displayIndex;
+            const fullIndex = warnings.findIndex(w => w.username === warning.username && w.createdAt === warning.createdAt && w.reason === warning.reason);
+            return `
+              <article class="recent-moderation-item warning-item">
+                <div class="moderation-rank">#${rank}</div>
+                <div class="moderation-body">
+                  <div class="moderation-topline">
+                    <strong>${warning.username}</strong>
+                    <span>${warning.issuedBy}</span>
+                  </div>
+                  <p>${warning.reason}</p>
+                  <small>${warning.createdAt}</small>
+                  ${isManagement ? `<button class="btn btn-secondary remove-warning-btn" data-warning-index="${fullIndex}" type="button">Remove</button>` : ''}
                 </div>
-                <p>${warning.reason}</p>
-                <small>${warning.createdAt}</small>
-              </div>
-            </article>
-          `;
-        })
-        .join('')}
-    </div>
-  `;
+              </article>
+            `;
+          })
+          .join('')}
+      </div>
+    `;
+  }
+  
+  // Also update the management panel
+  renderManagementWarnings();
 }
 
 function renderBans() {
   if (!bansList) return;
   const bans = getBans();
   const session = getStaffSession();
-  const allowRevoke = session && session.level >= 3;
+  const isManagement = session && Number(session.level) >= 3;
 
-  if (!bans.length) {
-    bansList.innerHTML = '<p class="response-box">No bans have been issued yet.</p>';
+  // Only show active bans (not revoked)
+  const activeBans = bans.filter(ban => !ban.status || ban.status !== 'revoked');
+
+  if (!activeBans.length) {
+    bansList.innerHTML = '<p class="response-box">No active bans have been issued yet.</p>';
     return;
   }
 
-  const recentBans = [...bans]
+  const recentBans = [...activeBans]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 10);
 
@@ -618,7 +629,7 @@ function renderBans() {
                 </div>
                 <p>${ban.reason}</p>
                 <small>${ban.issuedBy} · ${ban.createdAt}</small>
-                ${allowRevoke ? `<button class="btn btn-secondary revoke-ban-btn" data-ban-id="${ban.id}" type="button">Revoke Ban</button>` : ''}
+                ${isManagement ? `<button class="btn btn-secondary revoke-ban-btn" data-ban-id="${ban.id}" type="button">Revoke</button>` : ''}
               </div>
             </article>
           `;
@@ -626,6 +637,79 @@ function renderBans() {
         .join('')}
     </div>
   `;
+  
+  // Also render the management panel
+  renderManagementBans();
+}
+
+function renderManagementWarnings() {
+  const managementWarningsPanel = document.getElementById('managementWarningsPanel');
+  if (!managementWarningsPanel) return;
+  
+  const warnings = getWarnings();
+  const session = getStaffSession();
+  const isManagement = session && Number(session.level) >= 3;
+  
+  if (!isManagement || !warnings.length) {
+    managementWarningsPanel.innerHTML = '<p class="staff-panel-note" style="margin: 0;">No warnings to remove.</p>';
+    return;
+  }
+
+  managementWarningsPanel.innerHTML = warnings.map((warning, idx) => `
+    <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+      <div style="flex: 1;">
+        <div style="font-weight: 600; color: #fcd34d;">${warning.username}</div>
+        <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin-top: 4px;">${warning.reason}</div>
+        <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">By ${warning.issuedBy} • ${warning.createdAt}</div>
+      </div>
+      <button class="mgmt-remove-warning btn btn-secondary" data-warn-index="${idx}" style="white-space: nowrap; font-size: 12px; padding: 6px 12px;">Remove</button>
+    </div>
+  `).join('');
+}
+
+function renderManagementBans() {
+  const managementBansPanel = document.getElementById('managementBansPanel');
+  if (!managementBansPanel) return;
+  
+  const bans = getBans();
+  const session = getStaffSession();
+  const isManagement = session && Number(session.level) >= 3;
+  
+  if (!isManagement) {
+    managementBansPanel.innerHTML = '<p class="staff-panel-note" style="margin: 0;">Access denied.</p>';
+    return;
+  }
+  
+  const activeBans = bans.filter(ban => !ban.status || ban.status !== 'revoked');
+  
+  if (!activeBans.length) {
+    managementBansPanel.innerHTML = '<p class="staff-panel-note" style="margin: 0;">No bans to revoke.</p>';
+    return;
+  }
+
+  managementBansPanel.innerHTML = activeBans.map((ban) => `
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: start; gap: 12px;">
+      <div style="flex: 1;">
+        <div style="font-weight: 600; color: #fca5a5;">${ban.username}</div>
+        <div style="font-size: 13px; color: rgba(255, 255, 255, 0.7); margin-top: 4px;">${ban.reason} (${ban.duration})</div>
+        <div style="font-size: 12px; color: rgba(255, 255, 255, 0.5); margin-top: 4px;">By ${ban.issuedBy} • ${ban.createdAt}</div>
+      </div>
+      <button class="mgmt-revoke-ban btn btn-secondary" data-ban-id="${ban.id}" style="white-space: nowrap; font-size: 12px; padding: 6px 12px;">Revoke</button>
+    </div>
+  `).join('');
+}
+
+function updateManagementPanelVisibility() {
+  const session = getStaffSession();
+  const isManagement = session && Number(session.level) >= 3;
+  const panel = document.getElementById('managementModerationPanel');
+  if (panel) {
+    panel.style.display = isManagement ? 'block' : 'none';
+  }
+  if (isManagement) {
+    renderManagementWarnings();
+    renderManagementBans();
+  }
 }
 
 function renderStaffStatus() {
@@ -719,7 +803,7 @@ function populateManageStaffSelect(preserveUsername) {
 function updateManagementVisibility() {
   if (!staffManagementPanel) return;
   const session = getStaffSession();
-  staffManagementPanel.style.display = session && session.level >= 3 ? 'block' : 'none';
+  staffManagementPanel.style.display = session && Number(session.level) >= 3 ? 'block' : 'none';
 }
 
 function renderSelectedStaffManagementInfo(username) {
@@ -823,6 +907,76 @@ function updateStaffDashboard() {
   renderSelectedStaffManagementInfo(manageStaffUsername ? manageStaffUsername.value : '');
   renderWarnings();
   renderBans();
+  updateManagementPanelVisibility();
+  
+  // Setup event delegation for management warning removal
+  const managementWarningsPanel = document.getElementById('managementWarningsPanel');
+  if (managementWarningsPanel && !managementWarningsPanel.dataset.listenerSetup) {
+    managementWarningsPanel.dataset.listenerSetup = 'true';
+    managementWarningsPanel.addEventListener('click', async e => {
+      const btn = e.target.closest('.mgmt-remove-warning');
+      if (!btn) return;
+      
+      const idx = parseInt(btn.dataset.warnIndex, 10);
+      const session = getStaffSession();
+      
+      if (confirm('Remove this warning permanently?')) {
+        const warnings = getWarnings();
+        warnings.splice(idx, 1);
+        saveWarnings(warnings);
+        updateManagementPanelVisibility();
+        showResponse(staffDashboardMessage, 'Warning removed from system.');
+        
+        // Sync to server
+        try {
+          await apiRequest(`/api/warnings/${idx}`, {
+            method: 'DELETE',
+            body: JSON.stringify({ issuerLevel: session.level })
+          });
+        } catch (err) {
+          console.warn('Server sync failed:', err.message);
+        }
+      }
+    });
+  }
+  
+  // Setup event delegation for management ban revocation
+  const managementBansPanel = document.getElementById('managementBansPanel');
+  if (managementBansPanel && !managementBansPanel.dataset.listenerSetup) {
+    managementBansPanel.dataset.listenerSetup = 'true';
+    managementBansPanel.addEventListener('click', async e => {
+      const btn = e.target.closest('.mgmt-revoke-ban');
+      if (!btn) return;
+      
+      const banId = btn.dataset.banId;
+      const session = getStaffSession();
+      
+      if (confirm('Revoke this ban permanently?')) {
+        const bans = getBans();
+        const banIdx = bans.findIndex(b => b.id === banId);
+        if (banIdx >= 0) {
+          bans[banIdx].status = 'revoked';
+          bans[banIdx].revokedBy = session?.displayName || 'Unknown';
+          bans[banIdx].revokedAt = new Date().toLocaleString();
+          saveBans(bans);
+          updateManagementPanelVisibility();
+          renderBans();
+          showResponse(staffDashboardMessage, 'Ban revoked from system.');
+          
+          // Sync to server
+          try {
+            await apiRequest(`/api/bans/${banId}`, {
+              method: 'DELETE',
+              body: JSON.stringify({ issuedBy: session.displayName, issuerLevel: session.level })
+            });
+          } catch (err) {
+            console.warn('Server sync failed:', err.message);
+          }
+        }
+      }
+    });
+  }
+  
   renderTeamCategories();
   populateStaffSettings();
 }
@@ -991,7 +1145,7 @@ function setupStaffEventHandlers() {
   if (manageStaffApply) {
     manageStaffApply.addEventListener('click', async () => {
       const session = getStaffSession();
-      if (!session || session.level < 3) {
+      if (!session || Number(session.level) < 3) {
         showResponse(staffDashboardMessage, 'Only management and above can perform staff actions.', true);
         return;
       }
@@ -1194,64 +1348,110 @@ function setupStaffEventHandlers() {
         const warnings = response.warnings || [];
         const bans = response.bans || [];
         const account = response.account || findStaffAccount(username);
+        const session = getStaffSession();
+        const canRemoveWarnings = session && Number(session.level) >= 3;
+        
         let resultHtml = `<div class="record-search-summary"><p><strong>Search results for:</strong> ${username}</p>`;
         resultHtml += `<p><strong>Staff account:</strong> ${account ? account.role : 'Not on staff'}</p></div>`;
+        
         if (bans.length) {
-          resultHtml += '<div class="record-search-section"><h4>Bans</h4>' + bans.map(ban => `
-            <div class="staff-record-item">
-              <p><strong>Issued by:</strong> ${ban.issuedBy}</p>
-              <p><strong>Reason:</strong> ${ban.reason}</p>
-              <p><strong>Duration:</strong> ${ban.duration}</p>
-              <p><strong>Evidence:</strong> ${ban.evidence || 'None provided'}</p>
-              <p><strong>Date:</strong> ${ban.createdAt}</p>
-            </div>
-          `).join('') + '</div>';
+          const activeBans = bans.filter(b => !b.status || b.status !== 'revoked');
+          const revokedBans = bans.filter(b => b.status === 'revoked');
+          
+          if (activeBans.length) {
+            resultHtml += '<div class="record-search-section"><h4>Active Bans</h4>' + activeBans.map(ban => `
+              <div class="staff-record-item">
+                <p><strong>Issued by:</strong> ${ban.issuedBy}</p>
+                <p><strong>Reason:</strong> ${ban.reason}</p>
+                <p><strong>Duration:</strong> ${ban.duration}</p>
+                <p><strong>Evidence:</strong> ${ban.evidence || 'None provided'}</p>
+                <p><strong>Date:</strong> ${ban.createdAt}</p>
+              </div>
+            `).join('') + '</div>';
+          }
+          
+          if (revokedBans.length) {
+            resultHtml += '<div class="record-search-section"><h4>Revoked Bans</h4>' + revokedBans.map(ban => `
+              <div class="staff-record-item" style="opacity: 0.6; border-left-color: rgba(107, 114, 128, 0.5);">
+                <p><strong>Issued by:</strong> ${ban.issuedBy}</p>
+                <p><strong>Reason:</strong> ${ban.reason}</p>
+                <p><strong>Duration:</strong> ${ban.duration}</p>
+                <p><strong>Evidence:</strong> ${ban.evidence || 'None provided'}</p>
+                <p><strong>Date:</strong> ${ban.createdAt}</p>
+                <p><strong>Revoked by:</strong> ${ban.revokedBy} on ${ban.revokedAt}</p>
+              </div>
+            `).join('') + '</div>';
+          }
         }
+        
         if (warnings.length) {
-          resultHtml += '<div class="record-search-section"><h4>Warnings</h4>' + warnings.map(warning => `
+          resultHtml += '<div class="record-search-section"><h4>Warnings</h4>' + warnings.map((warning, idx) => {
+            // Create a unique identifier for this warning using its properties
+            const warningKey = btoa(JSON.stringify({ username: warning.username, reason: warning.reason, createdAt: warning.createdAt }));
+            return `
             <div class="staff-record-item">
               <p><strong>Issued by:</strong> ${warning.issuedBy}</p>
               <p><strong>Reason:</strong> ${warning.reason}</p>
               <p><strong>Evidence:</strong> ${warning.evidence || 'None provided'}</p>
               <p><strong>Date:</strong> ${warning.createdAt}</p>
+              ${canRemoveWarnings ? `<button class="btn btn-secondary remove-warning-btn" data-warning-key="${warningKey}" data-username="${warning.username}" data-reason="${warning.reason}" data-created="${warning.createdAt}" type="button" style="margin-top: 8px; font-size: 12px;">Remove Warning</button>` : ''}
             </div>
-          `).join('') + '</div>';
+          `;
+          }).join('') + '</div>';
         }
+        
         if (!bans.length && !warnings.length) {
-          resultHtml += '<div class="response-box">No active bans or warnings found for this username.</div>';
+          resultHtml += '<div class="response-box">No bans or warnings found for this username.</div>';
         }
         if (recordSearchResult) {
           recordSearchResult.innerHTML = resultHtml;
+          
+          // Add event listeners for remove warning buttons
+          if (canRemoveWarnings) {
+            recordSearchResult.querySelectorAll('.remove-warning-btn').forEach(btn => {
+              btn.addEventListener('click', async e => {
+                e.preventDefault();
+                const wUsername = btn.dataset.username;
+                const wReason = btn.dataset.reason;
+                const wCreated = btn.dataset.created;
+                const session = getStaffSession();
+                
+                if (confirm('Are you sure you want to remove this warning?')) {
+                  // Find and remove from localStorage
+                  const allWarnings = getWarnings();
+                  const warningIndex = allWarnings.findIndex(w => 
+                    w.username === wUsername && w.reason === wReason && w.createdAt === wCreated
+                  );
+                  
+                  if (warningIndex >= 0) {
+                    allWarnings.splice(warningIndex, 1);
+                    saveWarnings(allWarnings);
+                    showResponse(staffDashboardMessage, 'Warning removed successfully.');
+                    
+                    // Refresh the search results
+                    recordSearchForm.dispatchEvent(new Event('submit'));
+                    
+                    // Try to sync with server (won't break if it fails)
+                    try {
+                      await apiRequest(`/api/warnings/${encodeURIComponent(warningIndex)}`, {
+                        method: 'DELETE',
+                        body: JSON.stringify({ issuerLevel: session.level })
+                      });
+                    } catch (error) {
+                      console.warn('Could not sync warning removal to server:', error.message);
+                    }
+                  } else {
+                    showResponse(staffDashboardMessage, 'Warning not found.', true);
+                  }
+                }
+              });
+            });
+          }
         }
       } catch (error) {
         if (recordSearchResult) {
           recordSearchResult.innerHTML = `<div class="response-box">Unable to fetch record data for ${username}.</div>`;
         }
-      }
-    });
-  }
-
-  if (bansList) {
-    bansList.addEventListener('click', async event => {
-      const button = event.target.closest('.revoke-ban-btn');
-      if (!button) return;
-      const banId = button.dataset.banId;
-      const session = getStaffSession();
-      if (!session || session.level < 3) {
-        showResponse(staffDashboardMessage, 'Only management and above can revoke bans.', true);
-        return;
-      }
-      if (!banId) return;
-
-      try {
-        await apiRequest(`/api/bans/${encodeURIComponent(banId)}`, {
-          method: 'DELETE',
-          body: JSON.stringify({ issuedBy: session.displayName, issuerLevel: session.level })
-        });
-        await syncFromServer();
-        showResponse(staffDashboardMessage, 'Ban revoked successfully.');
-      } catch (error) {
-        showResponse(staffDashboardMessage, error.message || 'Unable to revoke ban.', true);
       }
     });
   }

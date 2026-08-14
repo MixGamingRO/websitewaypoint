@@ -251,7 +251,15 @@
         const response = await fetch(`/api/records?username=${encodeURIComponent(username)}`);
         const data = await response.json();
 
-        // Fetch player notes
+        if (!data.valid) {
+          lookupResultContainer.innerHTML = `
+            <div class="response-box" style="color: #fbbf24; border-color: rgba(251, 191, 36, 0.45);">
+              <strong>Invalid username:</strong> "${username}" has no active staff account and no warning or ban record.
+            </div>
+          `;
+          return;
+        }
+
         const notesResponse = await fetch(`/api/player/notes/${encodeURIComponent(username)}`);
         const notesData = await notesResponse.json();
 

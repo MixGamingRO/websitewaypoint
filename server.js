@@ -213,11 +213,11 @@ function getRoleLevel(role) {
 // Helper to check if issuer can manage target
 function canManageRole(issuerLevel, targetLevel) {
   // Only management (3) and above can manage others
-  if (issuerLevel < 3) {
+  if (Number(issuerLevel) < 3) {
     return false;
   }
   // Can only manage roles strictly below their level
-  return issuerLevel > targetLevel;
+  return Number(issuerLevel) > Number(targetLevel);
 }
 
 app.use((req, res, next) => {
@@ -269,6 +269,24 @@ app.post('/api/warnings', (req, res) => {
   res.status(201).json({ message: 'Warning created', warning });
 });
 
+app.delete('/api/warnings/:index', (req, res) => {
+  const { index } = req.params;
+  const { issuerLevel } = req.body || {};
+  if (Number(issuerLevel) < 3) {
+    return res.status(403).json({ error: 'Only management and above can remove warnings' });
+  }
+
+  const store = readStore();
+  const idx = parseInt(index, 10);
+  if (isNaN(idx) || idx < 0 || idx >= store.warnings.length) {
+    return res.status(404).json({ error: 'Warning not found' });
+  }
+
+  const [removedWarning] = store.warnings.splice(idx, 1);
+  writeStore(store);
+  res.json({ message: 'Warning removed', warning: removedWarning });
+});
+
 app.get('/api/bans', (req, res) => {
   const store = readStore();
   res.json({ bans: store.bans });
@@ -308,9 +326,11 @@ app.delete('/api/bans/:id', (req, res) => {
     return res.status(404).json({ error: 'Ban not found' });
   }
 
-  const [removedBan] = store.bans.splice(banIndex, 1);
+  store.bans[banIndex].status = 'revoked';
+  store.bans[banIndex].revokedBy = issuedBy;
+  store.bans[banIndex].revokedAt = new Date().toLocaleString();
   writeStore(store);
-  res.json({ message: 'Ban revoked', ban: removedBan });
+  res.json({ message: 'Ban revoked', ban: store.bans[banIndex] });
 });
 
 app.get('/api/staff/accounts', (req, res) => {
@@ -556,22 +576,31 @@ app.post('/api/staff/password', (req, res) => {
 
 app.get('/api/records', (req, res) => {
   const { username } = req.query;
-  if (!username) {
+  const lookupName = String(username || '').trim();
+
+  if (!lookupName) {
     return res.status(400).json({ error: 'username query is required' });
   }
 
   const store = readStore();
-  const warnings = store.warnings.filter(entry => entry.username.toLowerCase() === String(username).toLowerCase());
-  const bans = store.bans.filter(entry => entry.username.toLowerCase() === String(username).toLowerCase());
-  const account = store.staffAccounts.find(entry => entry.username.toLowerCase() === String(username).toLowerCase()) || null;
+  const warnings = store.warnings.filter(entry => entry.username.toLowerCase() === lookupName.toLowerCase());
+  const bans = store.bans.filter(entry => entry.username.toLowerCase() === lookupName.toLowerCase());
+  const account = store.staffAccounts.find(entry => entry.username.toLowerCase() === lookupName.toLowerCase()) || null;
+  const profile = store.staffProfiles && store.staffProfiles[lookupName.toLowerCase()];
+  const isActiveStaffAccount = !!account && profile && profile.status !== 'Deactivated';
+  const isKnownUser = warnings.length > 0 || bans.length > 0 || isActiveStaffAccount || !!account;
 
   res.json({
-    username: String(username),
+    username: lookupName,
     account,
     warnings,
     bans,
     hasWarnings: warnings.length > 0,
-    hasBans: bans.length > 0
+    hasBans: bans.length > 0,
+    valid: isKnownUser,
+    message: isKnownUser
+      ? 'User record found.'
+      : 'Invalid username: no active staff account or moderation record found.'
   });
 });
 
